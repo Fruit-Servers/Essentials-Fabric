@@ -65,6 +65,8 @@ public class Settings {
     private boolean forceDisableTeleportSafety;
     private Set<String> disabledCommands = new HashSet<>();
     private List<String> overriddenCommands = Collections.emptyList();
+    private boolean overrideVanillaCommands = true;
+    private List<String> keepVanillaCommands = Collections.emptyList();
     private List<String> playerCommands = Collections.emptyList();
     private Map<String, BigDecimal> commandCosts;
     private Set<String> socialSpyCommands = new HashSet<>();
@@ -510,6 +512,21 @@ public class Settings {
         return config.getBoolean("override-" + name.toLowerCase(Locale.ENGLISH), false);
     }
 
+    /** Fabric-only: whether Essentials takes over vanilla command names it shares (vanilla stays at /minecraft:<name>). */
+    public boolean isOverrideVanillaCommands() {
+        return overrideVanillaCommands;
+    }
+
+    /** Fabric-only: per-command opt-out from vanilla override ({@code keep-vanilla-commands}). */
+    public boolean isVanillaCommandKept(final String name) {
+        for (final String c : keepVanillaCommands) {
+            if (c.equalsIgnoreCase(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private Map<String, BigDecimal> _getCommandCosts() {
         final Map<String, Object> section = config.getSection("command-costs");
         if (section != null && !section.isEmpty()) {
@@ -863,6 +880,8 @@ public class Settings {
         changeDisplayName = config.getBoolean("change-displayname", true);
         disabledCommands = _getDisabledCommands();
         overriddenCommands = config.getStringList("overridden-commands");
+        overrideVanillaCommands = config.getBoolean("override-vanilla-commands", true);
+        keepVanillaCommands = config.getStringList("keep-vanilla-commands");
         playerCommands = config.getStringList("player-commands");
         nicknamePrefix = config.getString("nickname-prefix", "~");
         resetNickOnNameChange = config.getBoolean("reset-nick-on-name-change", false);

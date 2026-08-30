@@ -7,6 +7,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.essentialsx.fabric.Essentials;
 import net.essentialsx.fabric.text.Text;
@@ -43,6 +44,8 @@ public class CommandRegistry {
     private final Map<String, CommandInfo> infos = new LinkedHashMap<>();
     private final Map<String, String> aliasToCommand = new HashMap<>();
     private final Set<String> registeredLiterals = new java.util.HashSet<>();
+    /** Root literals present before any mod registered commands, i.e. vanilla's. */
+    private final Set<String> vanillaLiterals = new java.util.HashSet<>();
 
     public CommandRegistry(final Essentials ess) {
         this.ess = ess;
@@ -124,29 +127,50 @@ public class CommandRegistry {
         }
     }
 
+    /**
+     * Records the literals vanilla registered. Runs in an event phase before every other mod's
+     * {@code CommandRegistrationCallback}, so the snapshot does not contain mod commands.
+     */
+    public void snapshotVanilla(final CommandDispatcher<CommandSourceStack> dispatcher) {
+        vanillaLiterals.clear();
+        for (final CommandNode<CommandSourceStack> child : dispatcher.getRoot().getChildren()) {
+            vanillaLiterals.add(child.getName().toLowerCase(Locale.ENGLISH));
+        }
+    }
+
+    public boolean isVanillaLiteral(final String literal) {
+        return vanillaLiterals.contains(literal.toLowerCase(Locale.ENGLISH));
+    }
+
     private void registerLiteral(final CommandDispatcher<CommandSourceStack> dispatcher, final String literal, final EssentialsCommand command, final String label) {
         final String lower = literal.toLowerCase(Locale.ENGLISH);
         if (registeredLiterals.contains(lower)) {
             return;
         }
-        final boolean exists = dispatcher.getRoot().getChild(lower) != null;
-        if (exists && !lower.contains(":")) {
-            // Another mod/vanilla registered this literal. Essentials overrides the label only when
-            // configured; otherwise it keeps the namespaced form and its "e"-prefixed alias.
-            if (!ess.getSettings().isCommandOverridden(command.getName()) && !lower.startsWith("e")) {
-                ess.getLogger().info("Command /{} is already registered by another mod; use /essentials:{} or /e{}.", lower, command.getName(), command.getName());
-                return;
-            }
-            // Override: remove the existing node so ours wins.
-            dispatcher.getRoot().getChildren().removeIf(n -> n.getName().equals(lower));
-            try {
-                final java.lang.reflect.Field field = com.mojang.brigadier.tree.CommandNode.class.getDeclaredField("children");
-                field.setAccessible(true);
-                ((Map<?, ?>) field.get(dispatcher.getRoot())).remove(lower);
-                final java.lang.reflect.Field lit = com.mojang.brigadier.tree.CommandNode.class.getDeclaredField("literals");
-                lit.setAccessible(true);
-                ((Map<?, ?>) lit.get(dispatcher.getRoot())).remove(lower);
-            } catch (final ReflectiveOperationException ignored) {
+        final CommandNode<CommandSourceStack> existing = dispatcher.getRoot().getChild(lower);
+        if (existing != null && !lower.contains(":")) {
+            final boolean vanilla = isVanillaLiteral(lower);
+            if (vanilla) {
+                // Bukkit parity: plugin commands beat vanilla ones; vanilla stays reachable as /minecraft:<name>.
+                if (!ess.getSettings().isOverrideVanillaCommands() || ess.getSettings().isVanillaCommandKept(lower) || ess.getSettings().isVanillaCommandKept(command.getName())) {
+                    ess.getLogger().info("Leaving vanilla /{} untouched (keep-vanilla-commands); Essentials' version is /essentials:{} or /e{}.", lower, command.getName(), command.getName());
+                    return;
+                }
+                removeRootLiteral(dispatcher, lower);
+                if (dispatcher.getRoot().getChild("minecraft:" + lower) == null) {
+                    dispatcher.getRoot().addChild(cloneLiteral(existing, "minecraft:" + lower));
+                }
+                if (ess.getSettings().isDebug()) {
+                    ess.getLogger().info("Took over vanilla /{} (vanilla remains available as /minecraft:{}).", lower, lower);
+                }
+            } else {
+                // Another mod registered this literal. Essentials overrides the label only when
+                // configured; otherwise it keeps the namespaced form and its "e"-prefixed alias.
+                if (!ess.getSettings().isCommandOverridden(command.getName()) && !lower.startsWith("e")) {
+                    ess.getLogger().info("Command /{} is already registered by another mod; use /essentials:{} or /e{} (or add '{}' to overridden-commands).", lower, command.getName(), command.getName(), command.getName());
+                    return;
+                }
+                removeRootLiteral(dispatcher, lower);
             }
         }
         registeredLiterals.add(lower);
@@ -160,6 +184,35 @@ public class CommandRegistry {
         final LiteralCommandNode<CommandSourceStack> registered = dispatcher.register(node);
         if (ess.getSettings().isDebug()) {
             ess.getLogger().info("Registered /{} -> {}", registered.getName(), command.getName());
+        }
+    }
+
+    /** Copy of a root literal under a new name that shares the original's children, requirement and executor. */
+    private static LiteralCommandNode<CommandSourceStack> cloneLiteral(final CommandNode<CommandSourceStack> original, final String name) {
+        final LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal(name).requires(original.getRequirement());
+        if (original.getCommand() != null) {
+            builder.executes(original.getCommand());
+        }
+        if (original.getRedirect() != null) {
+            builder.forward(original.getRedirect(), original.getRedirectModifier(), original.isFork());
+        }
+        for (final CommandNode<CommandSourceStack> child : original.getChildren()) {
+            builder.then(child);
+        }
+        return builder.build();
+    }
+
+    /** Brigadier has no public removal API; drop the literal from the root's lookup maps. */
+    private static void removeRootLiteral(final CommandDispatcher<CommandSourceStack> dispatcher, final String lower) {
+        dispatcher.getRoot().getChildren().removeIf(n -> n.getName().equals(lower));
+        try {
+            final java.lang.reflect.Field field = CommandNode.class.getDeclaredField("children");
+            field.setAccessible(true);
+            ((Map<?, ?>) field.get(dispatcher.getRoot())).remove(lower);
+            final java.lang.reflect.Field lit = CommandNode.class.getDeclaredField("literals");
+            lit.setAccessible(true);
+            ((Map<?, ?>) lit.get(dispatcher.getRoot())).remove(lower);
+        } catch (final ReflectiveOperationException ignored) {
         }
     }
 

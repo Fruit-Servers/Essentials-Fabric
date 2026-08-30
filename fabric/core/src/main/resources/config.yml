@@ -180,6 +180,16 @@ overridden-commands:
   #- god
   #- info
 
+# Fabric: Essentials takes over the vanilla commands it shares a name with (/msg, /tp, /give, /kill, /gamemode, /time, ...)
+# exactly like Bukkit plugins do; the vanilla command stays reachable as /minecraft:<name> (e.g. /minecraft:tp with selectors).
+# Set this to false to leave every vanilla command alone and only expose Essentials' version as /essentials:<name> or /e<name>.
+override-vanilla-commands: true
+
+# Fabric: individual vanilla commands (or aliases) that Essentials must NOT take over even when the option above is enabled.
+keep-vanilla-commands:
+  #- tp
+  #- give
+
 # Disabling commands here will prevent Essentials from handling the command; this will not affect command conflicts.
 # You should not need to disable commands used by other plugins, as they will automatically get priority.
 # See https://breezewiki.com/bukkit/wiki/Commands.yml#aliases to map commands to other plugins.

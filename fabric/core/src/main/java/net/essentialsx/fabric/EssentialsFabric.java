@@ -81,7 +81,14 @@ public final class EssentialsFabric implements DedicatedServerModInitializer {
             readyCallbacks.clear();
         }
 
-        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> ess.getCommandRegistry().registerAll(dispatcher));
+        // Snapshot vanilla's literals before any other mod registers, then register ours after everyone else so
+        // vanilla-vs-mod collisions can be told apart (Bukkit parity: Essentials beats vanilla, yields to mods).
+        final net.minecraft.resources.ResourceLocation snapshotPhase = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("essentials_fabric", "snapshot_vanilla");
+        final net.minecraft.resources.ResourceLocation registerPhase = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("essentials_fabric", "register");
+        CommandRegistrationCallback.EVENT.addPhaseOrdering(snapshotPhase, net.fabricmc.fabric.api.event.Event.DEFAULT_PHASE);
+        CommandRegistrationCallback.EVENT.addPhaseOrdering(net.fabricmc.fabric.api.event.Event.DEFAULT_PHASE, registerPhase);
+        CommandRegistrationCallback.EVENT.register(snapshotPhase, (dispatcher, registryAccess, environment) -> ess.getCommandRegistry().snapshotVanilla(dispatcher));
+        CommandRegistrationCallback.EVENT.register(registerPhase, (dispatcher, registryAccess, environment) -> ess.getCommandRegistry().registerAll(dispatcher));
 
         ServerLifecycleEvents.SERVER_STARTING.register(ess::onServerStarting);
         ServerLifecycleEvents.SERVER_STARTED.register(ess::onServerStarted);

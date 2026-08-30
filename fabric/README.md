@@ -65,6 +65,11 @@ parity/commands.yml          command/alias parity manifest generated from upstre
 
 ## Behavioural notes / deliberate differences
 
+* Vanilla command names that Essentials shares (`/msg`, `/w`, `/tell`, `/tp`, `/give`, `/kill`, `/kick`, `/ban`, `/gamemode`,
+  `/time`, `/weather`, `/list`, `/me`, `/help`, `/clear`, `/xp`, ...) are taken over by Essentials exactly like on Bukkit; the
+  vanilla command remains reachable as `/minecraft:<name>` (e.g. `/minecraft:tp @a ~ ~ ~` for selectors). Disable globally
+  with `override-vanilla-commands: false` or per command with `keep-vanilla-commands`. Collisions with other mods still
+  follow upstream's `overridden-commands` rule.
 * World names: `overworld`, `the_nether`, `the_end`, or `namespace:path` for other dimensions (configurable aliases).
   Permission nodes such as `essentials.worlds.<name>` use these names.
 * `/ptime` and `/pweather` are implemented with per-player time/weather packets (`listener/PlayerTimeWeather`), the same

@@ -16,7 +16,7 @@ env:
 
 jobs:
   handle-dump:
-    if: github.event.action != 'closed'
+    if: github.event.action != 'closed' && github.repository == 'EssentialsX/Essentials'
     runs-on: ubuntu-latest
 
     steps:

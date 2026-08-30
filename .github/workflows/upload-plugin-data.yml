@@ -7,6 +7,8 @@ on:
 jobs:
   data:
     name: Generate and Upload
+    # Uploads to EssentialsX's R2 bucket; only meaningful (and only has secrets) in the upstream repository.
+    if: github.repository == 'EssentialsX/Essentials'
     runs-on: ubuntu-latest
 
     steps:

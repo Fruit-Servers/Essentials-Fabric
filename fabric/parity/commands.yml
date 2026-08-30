@@ -1,0 +1,467 @@
+# Command parity manifest: every EssentialsX core command and alias registered by essentials_fabric.
+# Generated from upstream Essentials/src/main/resources/plugin.yml (2.x). Spawn module commands are listed at the end.
+commands:
+  afk:
+    aliases: [eafk, away, eaway]
+    class: net.essentialsx.fabric.commands.Commandafk
+  antioch:
+    aliases: [eantioch, grenade, egrenade, tnt, etnt]
+    class: net.essentialsx.fabric.commands.Commandantioch
+  anvil:
+    aliases: [eanvil]
+    class: net.essentialsx.fabric.commands.Commandanvil
+  back:
+    aliases: [eback, return, ereturn]
+    class: net.essentialsx.fabric.commands.Commandback
+  backup:
+    aliases: [ebackup]
+    class: net.essentialsx.fabric.commands.Commandbackup
+  balance:
+    aliases: [bal, ebal, ebalance, money, emoney]
+    class: net.essentialsx.fabric.commands.Commandbalance
+  balancetop:
+    aliases: [ebalancetop, baltop, ebaltop]
+    class: net.essentialsx.fabric.commands.Commandbalancetop
+  ban:
+    aliases: [eban]
+    class: net.essentialsx.fabric.commands.Commandban
+  banip:
+    aliases: [ebanip]
+    class: net.essentialsx.fabric.commands.Commandbanip
+  beezooka:
+    aliases: [ebeezooka, beecannon, ebeecannon]
+    class: net.essentialsx.fabric.commands.Commandbeezooka
+  bigtree:
+    aliases: [ebigtree, largetree, elargetree]
+    class: net.essentialsx.fabric.commands.Commandbigtree
+  book:
+    aliases: [ebook]
+    class: net.essentialsx.fabric.commands.Commandbook
+  bottom:
+    aliases: [ebottom]
+    class: net.essentialsx.fabric.commands.Commandbottom
+  break:
+    aliases: [ebreak]
+    class: net.essentialsx.fabric.commands.Commandbreak
+  broadcast:
+    aliases: [bc, ebc, bcast, ebcast, ebroadcast, shout, eshout]
+    class: net.essentialsx.fabric.commands.Commandbroadcast
+  broadcastworld:
+    aliases: [bcw, ebcw, bcastw, ebcastw, ebroadcastworld, shoutworld, eshoutworld]
+    class: net.essentialsx.fabric.commands.Commandbroadcastworld
+  burn:
+    aliases: [eburn]
+    class: net.essentialsx.fabric.commands.Commandburn
+  cartographytable:
+    aliases: [ecartographytable, carttable, ecarttable]
+    class: net.essentialsx.fabric.commands.Commandcartographytable
+  clearinventory:
+    aliases: [ci, eci, clean, eclean, clear, eclear, clearinvent, eclearinvent, eclearinventory]
+    class: net.essentialsx.fabric.commands.Commandclearinventory
+  clearinventoryconfirmtoggle:
+    aliases: [eclearinventoryconfirmtoggle, clearinventoryconfirmoff, eclearinventoryconfirmoff, clearconfirmoff, eclearconfirmoff, clearconfirmon, eclearconfirmon, clearconfirm, eclearconfirm]
+    class: net.essentialsx.fabric.commands.Commandclearinventoryconfirmtoggle
+  compass:
+    aliases: [ecompass, direction, edirection]
+    class: net.essentialsx.fabric.commands.Commandcompass
+  condense:
+    aliases: [econdense, compact, ecompact, blocks, eblocks, toblocks, etoblocks]
+    class: net.essentialsx.fabric.commands.Commandcondense
+  createkit:
+    aliases: [kitcreate, createk, kc, ck]
+    class: net.essentialsx.fabric.commands.Commandcreatekit
+  customtext:
+    aliases: []
+    class: net.essentialsx.fabric.commands.Commandcustomtext
+  delhome:
+    aliases: [edelhome, remhome, eremhome, rmhome, ermhome]
+    class: net.essentialsx.fabric.commands.Commanddelhome
+  deljail:
+    aliases: [edeljail, remjail, eremjail, rmjail, ermjail]
+    class: net.essentialsx.fabric.commands.Commanddeljail
+  delkit:
+    aliases: [edelkit, remkit, eremkit, rmkit, ermkit, deletekit, edeletekit]
+    class: net.essentialsx.fabric.commands.Commanddelkit
+  delwarp:
+    aliases: [edelwarp, remwarp, eremwarp, rmwarp, ermwarp]
+    class: net.essentialsx.fabric.commands.Commanddelwarp
+  depth:
+    aliases: [edepth, height, eheight]
+    class: net.essentialsx.fabric.commands.Commanddepth
+  disposal:
+    aliases: [edisposal, trash, etrash]
+    class: net.essentialsx.fabric.commands.Commanddisposal
+  eco:
+    aliases: [eeco, economy, eeconomy]
+    class: net.essentialsx.fabric.commands.Commandeco
+  editsign:
+    aliases: [sign, esign, eeditsign]
+    class: net.essentialsx.fabric.commands.Commandeditsign
+  enchant:
+    aliases: [eenchant, enchantment, eenchantment]
+    class: net.essentialsx.fabric.commands.Commandenchant
+  enderchest:
+    aliases: [echest, eechest, eenderchest, endersee, eendersee, ec, eec]
+    class: net.essentialsx.fabric.commands.Commandenderchest
+  essentials:
+    aliases: [eessentials, ess, eess, essversion]
+    class: net.essentialsx.fabric.commands.Commandessentials
+  exp:
+    aliases: [eexp, xp]
+    class: net.essentialsx.fabric.commands.Commandexp
+  ext:
+    aliases: [eext, extinguish, eextinguish]
+    class: net.essentialsx.fabric.commands.Commandext
+  feed:
+    aliases: [eat, eeat, efeed]
+    class: net.essentialsx.fabric.commands.Commandfeed
+  fireball:
+    aliases: [efireball, fireentity, efireentity, fireskull, efireskull]
+    class: net.essentialsx.fabric.commands.Commandfireball
+  firework:
+    aliases: [efirework]
+    class: net.essentialsx.fabric.commands.Commandfirework
+  fly:
+    aliases: [efly]
+    class: net.essentialsx.fabric.commands.Commandfly
+  gamemode:
+    aliases: [adventure, eadventure, adventuremode, eadventuremode, creative, ecreative, eecreative, creativemode, ecreativemode, egamemode, gm, egm, gma, egma, gmc, egmc, gms, egms, gmt, egmt, survival, esurvival, survivalmode, esurvivalmode, gmsp, sp, egmsp, spec, spectator]
+    class: net.essentialsx.fabric.commands.Commandgamemode
+  gc:
+    aliases: [lag, elag, egc, mem, emem, memory, ememory, uptime, euptime, tps, etps, entities, eentities]
+    class: net.essentialsx.fabric.commands.Commandgc
+  getpos:
+    aliases: [coords, egetpos, position, eposition, whereami, ewhereami, getlocation, egetlocation, getloc, egetloc]
+    class: net.essentialsx.fabric.commands.Commandgetpos
+  give:
+    aliases: [egive]
+    class: net.essentialsx.fabric.commands.Commandgive
+  god:
+    aliases: [egod, godmode, egodmode, tgm, etgm]
+    class: net.essentialsx.fabric.commands.Commandgod
+  grindstone:
+    aliases: [egrindstone]
+    class: net.essentialsx.fabric.commands.Commandgrindstone
+  hat:
+    aliases: [ehat, head, ehead]
+    class: net.essentialsx.fabric.commands.Commandhat
+  heal:
+    aliases: [eheal]
+    class: net.essentialsx.fabric.commands.Commandheal
+  help:
+    aliases: [ehelp]
+    class: net.essentialsx.fabric.commands.Commandhelp
+  helpop:
+    aliases: [ac, eac, amsg, eamsg, ehelpop]
+    class: net.essentialsx.fabric.commands.Commandhelpop
+  home:
+    aliases: [ehome, homes, ehomes]
+    class: net.essentialsx.fabric.commands.Commandhome
+  ice:
+    aliases: [eice, efreeze]
+    class: net.essentialsx.fabric.commands.Commandice
+  ignore:
+    aliases: [eignore, unignore, eunignore, delignore, edelignore, remignore, eremignore, rmignore, ermignore]
+    class: net.essentialsx.fabric.commands.Commandignore
+  info:
+    aliases: [about, eabout, ifo, eifo, einfo, inform, einform, news, enews]
+    class: net.essentialsx.fabric.commands.Commandinfo
+  invsee:
+    aliases: [einvsee]
+    class: net.essentialsx.fabric.commands.Commandinvsee
+  item:
+    aliases: [i, eitem, ei]
+    class: net.essentialsx.fabric.commands.Commanditem
+  itemdb:
+    aliases: [dura, edura, durability, edurability, eitemdb, itemno, eitemno]
+    class: net.essentialsx.fabric.commands.Commanditemdb
+  itemlore:
+    aliases: [lore, elore, ilore, eilore, eitemlore]
+    class: net.essentialsx.fabric.commands.Commanditemlore
+  itemname:
+    aliases: [iname, einame, eitemname, itemrename, irename, eitemrename, eirename]
+    class: net.essentialsx.fabric.commands.Commanditemname
+  jailedplayers:
+    aliases: [ejailedplayers, ejailed, ejp]
+    class: net.essentialsx.fabric.commands.Commandjailedplayers
+  jails:
+    aliases: [ejails]
+    class: net.essentialsx.fabric.commands.Commandjails
+  jump:
+    aliases: [j, ej, ejump, jumpto, ejumpto]
+    class: net.essentialsx.fabric.commands.Commandjump
+  kick:
+    aliases: [ekick]
+    class: net.essentialsx.fabric.commands.Commandkick
+  kickall:
+    aliases: [ekickall]
+    class: net.essentialsx.fabric.commands.Commandkickall
+  kill:
+    aliases: [ekill]
+    class: net.essentialsx.fabric.commands.Commandkill
+  kit:
+    aliases: [ekit, kits, ekits]
+    class: net.essentialsx.fabric.commands.Commandkit
+  kitreset:
+    aliases: [ekitreset, kitr, ekitr, resetkit, eresetkit]
+    class: net.essentialsx.fabric.commands.Commandkitreset
+  kittycannon:
+    aliases: [ekittycannon]
+    class: net.essentialsx.fabric.commands.Commandkittycannon
+  lightning:
+    aliases: [elightning, shock, eshock, smite, esmite, strike, estrike, thor, ethor]
+    class: net.essentialsx.fabric.commands.Commandlightning
+  list:
+    aliases: [elist, online, eonline, playerlist, eplayerlist, plist, eplist, who, ewho]
+    class: net.essentialsx.fabric.commands.Commandlist
+  loom:
+    aliases: [eloom]
+    class: net.essentialsx.fabric.commands.Commandloom
+  mail:
+    aliases: [email, eemail, memo, ememo]
+    class: net.essentialsx.fabric.commands.Commandmail
+  me:
+    aliases: [action, eaction, describe, edescribe, eme]
+    class: net.essentialsx.fabric.commands.Commandme
+  more:
+    aliases: [emore]
+    class: net.essentialsx.fabric.commands.Commandmore
+  motd:
+    aliases: [emotd]
+    class: net.essentialsx.fabric.commands.Commandmotd
+  msg:
+    aliases: [w, m, t, pm, emsg, epm, tell, etell, whisper, ewhisper]
+    class: net.essentialsx.fabric.commands.Commandmsg
+  msgtoggle:
+    aliases: [emsgtoggle]
+    class: net.essentialsx.fabric.commands.Commandmsgtoggle
+  mute:
+    aliases: [emute, silence, esilence, unmute, eunmute]
+    class: net.essentialsx.fabric.commands.Commandmute
+  near:
+    aliases: [enear, nearby, enearby]
+    class: net.essentialsx.fabric.commands.Commandnear
+  nick:
+    aliases: [enick, nickname, enickname]
+    class: net.essentialsx.fabric.commands.Commandnick
+  nuke:
+    aliases: [enuke]
+    class: net.essentialsx.fabric.commands.Commandnuke
+  pay:
+    aliases: [epay]
+    class: net.essentialsx.fabric.commands.Commandpay
+  payconfirmtoggle:
+    aliases: [epayconfirmtoggle, payconfirmoff, epayconfirmoff, payconfirmon, epayconfirmon, payconfirm, epayconfirm]
+    class: net.essentialsx.fabric.commands.Commandpayconfirmtoggle
+  paytoggle:
+    aliases: [epaytoggle, payoff, epayoff, payon, epayon]
+    class: net.essentialsx.fabric.commands.Commandpaytoggle
+  ping:
+    aliases: [echo, eecho, eping, pong, epong]
+    class: net.essentialsx.fabric.commands.Commandping
+  playtime:
+    aliases: [eplaytime]
+    class: net.essentialsx.fabric.commands.Commandplaytime
+  potion:
+    aliases: [epotion, elixer, eelixer]
+    class: net.essentialsx.fabric.commands.Commandpotion
+  powertool:
+    aliases: [epowertool, pt, ept]
+    class: net.essentialsx.fabric.commands.Commandpowertool
+  powertoollist:
+    aliases: [epowertoollist, ptlist, eptlist]
+    class: net.essentialsx.fabric.commands.Commandpowertoollist
+  powertooltoggle:
+    aliases: [epowertooltoggle, ptt, eptt, pttoggle, epttoggle]
+    class: net.essentialsx.fabric.commands.Commandpowertooltoggle
+  ptime:
+    aliases: [playertime, eplayertime, eptime]
+    class: net.essentialsx.fabric.commands.Commandptime
+  pweather:
+    aliases: [playerweather, eplayerweather, epweather]
+    class: net.essentialsx.fabric.commands.Commandpweather
+  r:
+    aliases: [er, reply, ereply]
+    class: net.essentialsx.fabric.commands.Commandr
+  realname:
+    aliases: [erealname]
+    class: net.essentialsx.fabric.commands.Commandrealname
+  recipe:
+    aliases: [formula, eformula, method, emethod, erecipe, recipes, erecipes]
+    class: net.essentialsx.fabric.commands.Commandrecipe
+  remove:
+    aliases: [eremove, butcher, ebutcher, killall, ekillall, mobkill, emobkill]
+    class: net.essentialsx.fabric.commands.Commandremove
+  renamehome:
+    aliases: [erenamehome]
+    class: net.essentialsx.fabric.commands.Commandrenamehome
+  repair:
+    aliases: [fix, efix, erepair]
+    class: net.essentialsx.fabric.commands.Commandrepair
+  rest:
+    aliases: [erest]
+    class: net.essentialsx.fabric.commands.Commandrest
+  rtoggle:
+    aliases: [ertoggle, replytoggle, ereplytoggle]
+    class: net.essentialsx.fabric.commands.Commandrtoggle
+  rules:
+    aliases: [erules]
+    class: net.essentialsx.fabric.commands.Commandrules
+  seen:
+    aliases: [eseen, ealts, alts]
+    class: net.essentialsx.fabric.commands.Commandseen
+  sell:
+    aliases: [esell]
+    class: net.essentialsx.fabric.commands.Commandsell
+  sethome:
+    aliases: [esethome, createhome, ecreatehome]
+    class: net.essentialsx.fabric.commands.Commandsethome
+  setjail:
+    aliases: [esetjail, createjail, ecreatejail]
+    class: net.essentialsx.fabric.commands.Commandsetjail
+  settpr:
+    aliases: [esettpr, settprandom, esettprandom]
+    class: net.essentialsx.fabric.commands.Commandsettpr
+  setwarp:
+    aliases: [createwarp, ecreatewarp, esetwarp]
+    class: net.essentialsx.fabric.commands.Commandsetwarp
+  setworth:
+    aliases: [esetworth]
+    class: net.essentialsx.fabric.commands.Commandsetworth
+  showkit:
+    aliases: [kitpreview, preview, kitshow]
+    class: net.essentialsx.fabric.commands.Commandshowkit
+  skull:
+    aliases: [eskull, playerskull, eplayerskull, head, ehead]
+    class: net.essentialsx.fabric.commands.Commandskull
+  smithingtable:
+    aliases: [esmithingtable, smithtable, esmithtable]
+    class: net.essentialsx.fabric.commands.Commandsmithingtable
+  socialspy:
+    aliases: [esocialspy]
+    class: net.essentialsx.fabric.commands.Commandsocialspy
+  spawner:
+    aliases: [changems, echangems, espawner, mobspawner, emobspawner]
+    class: net.essentialsx.fabric.commands.Commandspawner
+  spawnmob:
+    aliases: [mob, emob, spawnentity, espawnentity, espawnmob]
+    class: net.essentialsx.fabric.commands.Commandspawnmob
+  speed:
+    aliases: [flyspeed, eflyspeed, fspeed, efspeed, espeed, walkspeed, ewalkspeed, wspeed, ewspeed]
+    class: net.essentialsx.fabric.commands.Commandspeed
+  stonecutter:
+    aliases: [estonecutter]
+    class: net.essentialsx.fabric.commands.Commandstonecutter
+  sudo:
+    aliases: [esudo]
+    class: net.essentialsx.fabric.commands.Commandsudo
+  suicide:
+    aliases: [esuicide]
+    class: net.essentialsx.fabric.commands.Commandsuicide
+  tempban:
+    aliases: [etempban]
+    class: net.essentialsx.fabric.commands.Commandtempban
+  tempbanip:
+    aliases: [etempbanip]
+    class: net.essentialsx.fabric.commands.Commandtempbanip
+  thunder:
+    aliases: [ethunder]
+    class: net.essentialsx.fabric.commands.Commandthunder
+  time:
+    aliases: [day, eday, night, enight, etime]
+    class: net.essentialsx.fabric.commands.Commandtime
+  togglejail:
+    aliases: [jail, ejail, tjail, etjail, etogglejail, unjail, eunjail]
+    class: net.essentialsx.fabric.commands.Commandtogglejail
+  top:
+    aliases: [etop]
+    class: net.essentialsx.fabric.commands.Commandtop
+  tp:
+    aliases: [tele, etele, teleport, eteleport, etp, tp2p, etp2p]
+    class: net.essentialsx.fabric.commands.Commandtp
+  tpa:
+    aliases: [call, ecall, etpa, tpask, etpask]
+    class: net.essentialsx.fabric.commands.Commandtpa
+  tpaall:
+    aliases: [etpaall]
+    class: net.essentialsx.fabric.commands.Commandtpaall
+  tpacancel:
+    aliases: [etpacancel]
+    class: net.essentialsx.fabric.commands.Commandtpacancel
+  tpaccept:
+    aliases: [etpaccept, tpyes, etpyes]
+    class: net.essentialsx.fabric.commands.Commandtpaccept
+  tpahere:
+    aliases: [etpahere]
+    class: net.essentialsx.fabric.commands.Commandtpahere
+  tpall:
+    aliases: [etpall]
+    class: net.essentialsx.fabric.commands.Commandtpall
+  tpauto:
+    aliases: [etpauto]
+    class: net.essentialsx.fabric.commands.Commandtpauto
+  tpdeny:
+    aliases: [etpdeny, tpno, etpno]
+    class: net.essentialsx.fabric.commands.Commandtpdeny
+  tphere:
+    aliases: [s, etphere]
+    class: net.essentialsx.fabric.commands.Commandtphere
+  tpo:
+    aliases: [etpo]
+    class: net.essentialsx.fabric.commands.Commandtpo
+  tpoffline:
+    aliases: [otp, offlinetp, tpoff, tpoffline, etpoffline]
+    class: net.essentialsx.fabric.commands.Commandtpoffline
+  tpohere:
+    aliases: [etpohere]
+    class: net.essentialsx.fabric.commands.Commandtpohere
+  tppos:
+    aliases: [etppos]
+    class: net.essentialsx.fabric.commands.Commandtppos
+  tpr:
+    aliases: [etpr, tprandom, etprandom]
+    class: net.essentialsx.fabric.commands.Commandtpr
+  tptoggle:
+    aliases: [etptoggle]
+    class: net.essentialsx.fabric.commands.Commandtptoggle
+  tree:
+    aliases: [etree]
+    class: net.essentialsx.fabric.commands.Commandtree
+  unban:
+    aliases: [pardon, eunban, epardon]
+    class: net.essentialsx.fabric.commands.Commandunban
+  unbanip:
+    aliases: [eunbanip, pardonip, epardonip]
+    class: net.essentialsx.fabric.commands.Commandunbanip
+  unlimited:
+    aliases: [eunlimited, ul, unl, eul, eunl]
+    class: net.essentialsx.fabric.commands.Commandunlimited
+  vanish:
+    aliases: [v, ev, evanish]
+    class: net.essentialsx.fabric.commands.Commandvanish
+  warp:
+    aliases: [ewarp, warps, ewarps]
+    class: net.essentialsx.fabric.commands.Commandwarp
+  warpinfo:
+    aliases: [ewarpinfo]
+    class: net.essentialsx.fabric.commands.Commandwarpinfo
+  weather:
+    aliases: [rain, erain, sky, esky, storm, estorm, sun, esun, eweather]
+    class: net.essentialsx.fabric.commands.Commandweather
+  whois:
+    aliases: [ewhois]
+    class: net.essentialsx.fabric.commands.Commandwhois
+  workbench:
+    aliases: [craft, ecraft, wb, ewb, wbench, ewbench, eworkbench]
+    class: net.essentialsx.fabric.commands.Commandworkbench
+  world:
+    aliases: [eworld]
+    class: net.essentialsx.fabric.commands.Commandworld
+  worth:
+    aliases: [eprice, price, eworth]
+    class: net.essentialsx.fabric.commands.Commandworth
+spawn-module:
+  spawn:
+    aliases: [espawn]
+  setspawn:
+    aliases: [esetspawn]

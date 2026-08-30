@@ -1,0 +1,133 @@
+package net.essentialsx.fabric.commands;
+
+import net.essentialsx.fabric.command.CommandSource;
+import net.essentialsx.fabric.command.EssentialsCommand;
+import net.essentialsx.fabric.command.NotEnoughArgumentsException;
+import net.essentialsx.fabric.text.Text;
+import net.essentialsx.fabric.user.LazyLocation;
+import net.essentialsx.fabric.user.User;
+import net.minecraft.server.MinecraftServer;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Queue;
+
+public class Commandnear extends EssentialsCommand {
+    public Commandnear() {
+        super("near");
+    }
+
+    @Override
+    protected void run(final MinecraftServer server, final User user, final String commandLabel, final String[] args) throws Exception {
+        long maxRadius = ess.getSettings().getNearRadius();
+        if (maxRadius == 0) {
+            maxRadius = 200;
+        }
+        long radius = maxRadius;
+        User otherUser = null;
+        if (args.length > 0) {
+            try {
+                radius = Long.parseLong(args[0]);
+            } catch (final NumberFormatException e) {
+                try {
+                    otherUser = getPlayer(server, user, args, 0);
+                } catch (final Exception ignored) {
+                }
+            }
+            if (args.length > 1 && otherUser != null) {
+                try {
+                    radius = Long.parseLong(args[1]);
+                } catch (final NumberFormatException ignored) {
+                }
+            }
+        }
+        radius = Math.abs(radius);
+        if (radius > maxRadius && !user.isAuthorized("essentials.near.maxexempt")) {
+            user.sendTl("radiusTooBig", maxRadius);
+            radius = maxRadius;
+        }
+        if (otherUser == null || !user.isAuthorized("essentials.near.others")) {
+            otherUser = user;
+        }
+        user.sendTl("nearbyPlayers", Text.parsed(getLocal(user.getSource(), otherUser, radius)));
+    }
+
+    @Override
+    protected void run(final MinecraftServer server, final CommandSource sender, final String commandLabel, final String[] args) throws Exception {
+        if (args.length == 0) {
+            throw new NotEnoughArgumentsException();
+        }
+        final User otherUser = getPlayer(server, args, 0, true, false);
+        long radius = 200;
+        if (args.length > 1) {
+            try {
+                radius = Long.parseLong(args[1]);
+            } catch (final NumberFormatException ignored) {
+            }
+        }
+        sender.sendTl("nearbyPlayers", Text.parsed(getLocal(sender, otherUser, radius)));
+    }
+
+    private String getLocal(final CommandSource source, final User user, final long radius) {
+        final LazyLocation loc = user.getLocation();
+        final StringBuilder output = new StringBuilder();
+        final long radiusSquared = radius * radius;
+        final boolean showHidden = user.canInteractVanished();
+        final Queue<User> nearbyPlayers = new PriorityQueue<>((o1, o2) -> (int) (o1.getLocation().distanceSquared(loc) - o2.getLocation().distanceSquared(loc)));
+        for (final User player : ess.getOnlineUsers()) {
+            if (!player.equals(user) && !player.isAuthorized("essentials.near.exclude") && (!player.isHidden(user.getBase()) || showHidden || !player.isHiddenFrom(user.getBase()))) {
+                final LazyLocation playerLoc = player.getLocation();
+                if (!playerLoc.sameWorld(loc)) {
+                    continue;
+                }
+                final long delta = (long) playerLoc.distanceSquared(loc);
+                if (delta < radiusSquared) {
+                    nearbyPlayers.offer(player);
+                }
+            }
+        }
+        while (!nearbyPlayers.isEmpty()) {
+            if (output.length() > 0) {
+                output.append(", ");
+            }
+            final User nearbyPlayer = nearbyPlayers.poll();
+            if (nearbyPlayer == null) {
+                continue;
+            }
+            output.append(user.playerTl("nearbyPlayersList", nearbyPlayer.getDisplayName(), (long) nearbyPlayer.getLocation().distance(loc)));
+        }
+        return output.length() > 1 ? output.toString() : source.tl("none");
+    }
+
+    @Override
+    protected List<String> getTabCompleteOptions(final MinecraftServer server, final User user, final String commandLabel, final String[] args) {
+        if (user.isAuthorized("essentials.near.others")) {
+            if (args.length == 1) {
+                return getPlayers(user);
+            } else if (args.length == 2) {
+                return new ArrayList<>(List.of(Integer.toString(ess.getSettings().getNearRadius())));
+            } else {
+                return Collections.emptyList();
+            }
+        } else {
+            if (args.length == 1) {
+                return new ArrayList<>(List.of(Integer.toString(ess.getSettings().getNearRadius())));
+            } else {
+                return Collections.emptyList();
+            }
+        }
+    }
+
+    @Override
+    protected List<String> getTabCompleteOptions(final MinecraftServer server, final CommandSource sender, final String commandLabel, final String[] args) {
+        if (args.length == 1) {
+            return getPlayers(sender);
+        } else if (args.length == 2) {
+            return new ArrayList<>(List.of(Integer.toString(ess.getSettings().getNearRadius())));
+        } else {
+            return Collections.emptyList();
+        }
+    }
+}

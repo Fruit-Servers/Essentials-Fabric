@@ -1,0 +1,104 @@
+name: Build Essentials Fabric
+
+on:
+  push:
+    branches:
+      - 2.x
+      - dev/*
+    tags:
+      - 'v*'
+    paths:
+      - 'fabric/**'
+      - '.github/workflows/build-fabric.yml'
+      - 'gradle/**'
+      - 'gradlew*'
+  pull_request:
+    paths:
+      - 'fabric/**'
+      - '.github/workflows/build-fabric.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Fabric mods
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Git repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 21
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            TAG="${GITHUB_REF#refs/tags/v}"
+            echo "mod_version=${TAG}" >> "$GITHUB_OUTPUT"
+            if [[ "${TAG}" == *-* ]]; then
+              echo "prerelease=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "prerelease=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            BASE="$(grep -E '^mod_version=' fabric/gradle.properties | cut -d= -f2)"
+            echo "mod_version=${BASE}-dev.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build with Gradle
+        working-directory: fabric
+        run: |
+          chmod +x ../gradlew
+          ../gradlew build --stacktrace -Pmod_version=${{ steps.version.outputs.mod_version }}
+
+      - name: Publish JUnit report
+        uses: mikepenz/action-junit-report@v5
+        if: success() || failure()
+        with:
+          report_paths: 'fabric/**/build/test-results/test*/TEST-*.xml'
+          check_name: Fabric JUnit report
+
+      - name: Collect mod jars
+        shell: bash
+        run: |
+          mkdir -p fabric-jars
+          cp fabric/core/build/libs/EssentialsFabric-*.jar fabric-jars/
+          cp fabric/spawn/build/libs/EssentialsFabricSpawn-*.jar fabric-jars/
+          rm -f fabric-jars/*-sources.jar
+          ls -la fabric-jars
+
+      - name: Archive Fabric mod jars
+        uses: actions/upload-artifact@v4
+        with:
+          name: Essentials Fabric mod jars
+          path: fabric-jars/
+
+      - name: Create GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Essentials Fabric ${{ steps.version.outputs.mod_version }}
+          tag_name: ${{ github.ref_name }}
+          prerelease: ${{ steps.version.outputs.prerelease }}
+          generate_release_notes: true
+          files: fabric-jars/*.jar
+          body: |
+            Essentials Fabric ${{ steps.version.outputs.mod_version }} for Minecraft 1.21.1 (Fabric).
+
+            **Install:** drop `EssentialsFabric-*.jar` (and optionally `EssentialsFabricSpawn-*.jar`) into `mods/`
+            together with Fabric API, Impactor 5.3.5+1.21.1 and its Cloud command framework mod.
+            See `fabric/README.md` for details.

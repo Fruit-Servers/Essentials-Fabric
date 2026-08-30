@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "essentials_fabric",
+  "version": "${version}",
+  "name": "Essentials Fabric",
+  "description": "Fabric-native reimplementation of the EssentialsX core module for Minecraft 1.21.1.",
+  "authors": ["EssentialsX Team", "Essentials Fabric contributors"],
+  "contact": {"sources": "https://github.com/EssentialsX/Essentials"},
+  "license": "GPL-3.0",
+  "environment": "server",
+  "entrypoints": {
+    "server": ["net.essentialsx.fabric.EssentialsFabric"]
+  },
+  "mixins": ["essentials_fabric.mixins.json"],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*",
+    "impactor": ">=5.3.5"
+  },
+  "suggests": {
+    "luckperms": "*",
+    "fabric-permissions-api-v0": "*"
+  }
+}

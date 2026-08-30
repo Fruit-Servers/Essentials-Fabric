@@ -1,0 +1,25 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.essentialsx.fabric.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "LevelAccessor",
+    "PlayerListMixin",
+    "ServerGamePacketListenerImplMixin",
+    "ServerPlayerMixin",
+    "PlayerMixin",
+    "LivingEntityMixin",
+    "FoodDataMixin",
+    "ItemEntityMixin",
+    "MobMixin",
+    "SleepStatusMixin",
+    "TrackedEntityMixin",
+    "ServerCommonPacketListenerImplMixin",
+    "SignBlockEntityMixin",
+    "ServerPlayerGameModeMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

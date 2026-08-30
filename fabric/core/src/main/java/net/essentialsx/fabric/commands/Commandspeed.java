@@ -1,0 +1,168 @@
+package net.essentialsx.fabric.commands;
+
+import net.essentialsx.fabric.command.CommandSource;
+import net.essentialsx.fabric.command.EssentialsCommand;
+import net.essentialsx.fabric.command.NotEnoughArgumentsException;
+import net.essentialsx.fabric.command.PlayerNotFoundException;
+import net.essentialsx.fabric.text.Text;
+import net.essentialsx.fabric.user.User;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+public class Commandspeed extends EssentialsCommand {
+    private static final List<String> TYPES = Arrays.asList("walk", "fly", "1", "1.5", "1.75", "2");
+    private static final List<String> SPEEDS = Arrays.asList("1", "1.5", "1.75", "2");
+
+    public Commandspeed() {
+        super("speed");
+    }
+
+    public static void setFlySpeed(final ServerPlayer player, final float speed) {
+        player.getAbilities().setFlyingSpeed(speed);
+        player.onUpdateAbilities();
+    }
+
+    public static void setWalkSpeed(final ServerPlayer player, final float speed) {
+        player.getAbilities().setWalkingSpeed(speed);
+        player.onUpdateAbilities();
+    }
+
+    @Override
+    protected void run(final MinecraftServer server, final CommandSource sender, final String commandLabel, final String[] args) throws Exception {
+        if (args.length < 3) {
+            throw new NotEnoughArgumentsException();
+        }
+        speedOtherPlayers(server, sender, isFlyMode(args[0]), true, getMoveSpeed(args[1]), args[2]);
+    }
+
+    @Override
+    protected void run(final MinecraftServer server, final User user, final String commandLabel, final String[] args) throws Exception {
+        if (args.length < 1) {
+            throw new NotEnoughArgumentsException();
+        }
+        final boolean isFly;
+        final float speed;
+        final boolean isBypass = user.isAuthorized("essentials.speed.bypass");
+        if (args.length == 1) {
+            final boolean inferredFly = isFlyAlias(commandLabel) || (!isWalkAlias(commandLabel) && user.getBase().getAbilities().flying);
+            isFly = flyPermCheck(user, inferredFly);
+            speed = getMoveSpeed(args[0]);
+        } else {
+            isFly = flyPermCheck(user, isFlyMode(args[0]));
+            speed = getMoveSpeed(args[1]);
+            if (args.length > 2 && user.isAuthorized("essentials.speed.others")) {
+                if (args[2].trim().length() < 2) {
+                    throw new PlayerNotFoundException();
+                }
+                speedOtherPlayers(server, user.getSource(), isFly, isBypass, speed, args[2]);
+                return;
+            }
+        }
+        if (isFly) {
+            setFlySpeed(user.getBase(), getRealMoveSpeed(speed, true, isBypass));
+            user.sendTl("moveSpeed", Text.parsed(user.playerTl("flying")), speed, user.getDisplayName());
+            return;
+        }
+        setWalkSpeed(user.getBase(), getRealMoveSpeed(speed, false, isBypass));
+        user.sendTl("moveSpeed", Text.parsed(user.playerTl("walking")), speed, user.getDisplayName());
+    }
+
+    private void speedOtherPlayers(final MinecraftServer server, final CommandSource sender, final boolean isFly, final boolean isBypass, final float speed, final String name) throws PlayerNotFoundException {
+        final boolean skipHidden = sender.isPlayer() && !ess.getUser(sender.getPlayer()).canInteractVanished();
+        boolean foundUser = false;
+        final List<ServerPlayer> matchedPlayers = ess.matchPlayers(name);
+        for (final ServerPlayer matchPlayer : matchedPlayers) {
+            final User player = ess.getUser(matchPlayer);
+            if (skipHidden && player.isHidden(sender.getPlayer()) && player.isHiddenFrom(sender.getPlayer())) {
+                continue;
+            }
+            foundUser = true;
+            if (isFly) {
+                setFlySpeed(matchPlayer, getRealMoveSpeed(speed, true, isBypass));
+                sender.sendTl("moveSpeed", Text.parsed(sender.tl("flying")), speed, player.getDisplayName());
+            } else {
+                setWalkSpeed(matchPlayer, getRealMoveSpeed(speed, false, isBypass));
+                sender.sendTl("moveSpeed", Text.parsed(sender.tl("walking")), speed, player.getDisplayName());
+            }
+        }
+        if (!foundUser) {
+            throw new PlayerNotFoundException();
+        }
+    }
+
+    private boolean flyPermCheck(final User user, final boolean input) {
+        final boolean canFly = user.isAuthorized("essentials.speed.fly");
+        final boolean canWalk = user.isAuthorized("essentials.speed.walk");
+        if (input && canFly || !input && canWalk || !canFly && !canWalk) {
+            return input;
+        } else {
+            return !canWalk;
+        }
+    }
+
+    private boolean isFlyAlias(final String label) {
+        return label.contains("fly") || label.equalsIgnoreCase("fspeed") || label.equalsIgnoreCase("efspeed");
+    }
+
+    private boolean isWalkAlias(final String label) {
+        return label.contains("walk") || label.equalsIgnoreCase("wspeed") || label.equalsIgnoreCase("ewspeed");
+    }
+
+    private boolean isFlyMode(final String modeString) throws NotEnoughArgumentsException {
+        final boolean isFlyMode;
+        if (modeString.contains("fly") || modeString.equalsIgnoreCase("f")) {
+            isFlyMode = true;
+        } else if (modeString.contains("walk") || modeString.contains("run") || modeString.equalsIgnoreCase("w") || modeString.equalsIgnoreCase("r")) {
+            isFlyMode = false;
+        } else {
+            throw new NotEnoughArgumentsException();
+        }
+        return isFlyMode;
+    }
+
+    private float getMoveSpeed(final String moveSpeed) throws NotEnoughArgumentsException {
+        float userSpeed;
+        try {
+            userSpeed = Float.parseFloat(moveSpeed);
+            if (userSpeed > 10f) {
+                userSpeed = 10f;
+            } else if (userSpeed < 0.0001f) {
+                userSpeed = 0.0001f;
+            }
+        } catch (final NumberFormatException e) {
+            throw new NotEnoughArgumentsException();
+        }
+        return userSpeed;
+    }
+
+    private float getRealMoveSpeed(final float userSpeed, final boolean isFly, final boolean isBypass) {
+        final float defaultSpeed = isFly ? 0.1f : 0.2f;
+        float maxSpeed = 1f;
+        if (!isBypass) {
+            maxSpeed = (float) (isFly ? ess.getSettings().getMaxFlySpeed() : ess.getSettings().getMaxWalkSpeed());
+        }
+        if (userSpeed < 1f) {
+            return defaultSpeed * userSpeed;
+        } else {
+            final float ratio = ((userSpeed - 1) / 9) * (maxSpeed - defaultSpeed);
+            return ratio + defaultSpeed;
+        }
+    }
+
+    @Override
+    protected List<String> getTabCompleteOptions(final MinecraftServer server, final CommandSource sender, final String commandLabel, final String[] args) {
+        if (args.length == 1) {
+            return TYPES;
+        } else if (args.length == 2) {
+            return SPEEDS;
+        } else if (args.length == 3 && sender.isAuthorized("essentials.speed.others")) {
+            return getPlayers(sender);
+        } else {
+            return Collections.emptyList();
+        }
+    }
+}

@@ -1,0 +1,8 @@
+.gradle/
+build/
+run/
+*/build/
+*/run/
+*/.gradle/
+.idea/
+devmods/

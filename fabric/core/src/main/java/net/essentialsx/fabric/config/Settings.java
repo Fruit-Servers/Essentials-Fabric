@@ -67,6 +67,8 @@ public class Settings {
     private List<String> overriddenCommands = Collections.emptyList();
     private boolean overrideVanillaCommands = true;
     private List<String> keepVanillaCommands = Collections.emptyList();
+    private boolean mergeConflictingCommands = true;
+    private Map<String, String> commandNameOverrides = Collections.emptyMap();
     private List<String> playerCommands = Collections.emptyList();
     private Map<String, BigDecimal> commandCosts;
     private Set<String> socialSpyCommands = new HashSet<>();
@@ -527,6 +529,44 @@ public class Settings {
         return false;
     }
 
+    /**
+     * Fabric-only: whether a command name another mod already owns is shared between both mods
+     * ({@code merge-conflicting-commands}) rather than left entirely to the other mod.
+     */
+    public boolean isMergeConflictingCommands() {
+        return mergeConflictingCommands;
+    }
+
+    /**
+     * Fabric-only: the literal an Essentials command or alias is moved to by
+     * {@code command-name-overrides}, or null when it keeps its own name.
+     */
+    public String getCommandNameOverride(final String name) {
+        return commandNameOverrides.get(name.toLowerCase(Locale.ENGLISH));
+    }
+
+    private Map<String, String> _getCommandNameOverrides() {
+        final Map<String, Object> section = config.getSection("command-name-overrides");
+        if (section == null || section.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        final Map<String, String> newMap = new HashMap<>();
+        for (final Map.Entry<String, Object> entry : section.entrySet()) {
+            final String from = entry.getKey().toLowerCase(Locale.ENGLISH).replace("/", "").trim();
+            final String to = entry.getValue() == null ? "" : entry.getValue().toString().toLowerCase(Locale.ENGLISH).replace("/", "").trim();
+            if (from.isEmpty() || to.isEmpty()) {
+                ess.getLogger().warn("Invalid command name override: '" + entry.getKey() + "' must map to a command name.");
+                continue;
+            }
+            if (to.indexOf(' ') >= 0 || to.indexOf(':') >= 0) {
+                ess.getLogger().warn("Invalid command name override for '" + from + "': '" + to + "' must be a single unqualified command name.");
+                continue;
+            }
+            newMap.put(from, to);
+        }
+        return newMap;
+    }
+
     private Map<String, BigDecimal> _getCommandCosts() {
         final Map<String, Object> section = config.getSection("command-costs");
         if (section != null && !section.isEmpty()) {
@@ -882,6 +922,8 @@ public class Settings {
         overriddenCommands = config.getStringList("overridden-commands");
         overrideVanillaCommands = config.getBoolean("override-vanilla-commands", true);
         keepVanillaCommands = config.getStringList("keep-vanilla-commands");
+        mergeConflictingCommands = config.getBoolean("merge-conflicting-commands", true);
+        commandNameOverrides = _getCommandNameOverrides();
         playerCommands = config.getStringList("player-commands");
         nicknamePrefix = config.getString("nickname-prefix", "~");
         resetNickOnNameChange = config.getBoolean("reset-nick-on-name-change", false);

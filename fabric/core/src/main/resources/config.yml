@@ -190,6 +190,25 @@ keep-vanilla-commands:
   #- tp
   #- give
 
+# Fabric: what to do when ANOTHER MOD (not vanilla) already registered a command name Essentials also uses.
+# When true, both are kept on the same command: the other mod's subcommands still resolve, and anything it does
+# not define falls through to Essentials. For example, with a shop mod that owns '/eco':
+#   /eco shop list      -> the other mod (it defines the 'shop' subcommand)
+#   /eco give Notch 100 -> Essentials (the other mod defines no 'give' subcommand)
+#   /eco                -> the other mod, since it registered the name first
+# Set this to false to give the whole command to the other mod instead; Essentials then stays reachable only as
+# /essentials:<name> and /e<name>. Either way, listing the command in 'overridden-commands' above hands it to
+# Essentials outright. Genuine overlaps, where both mods define the same subcommand, need 'overridden-commands'.
+merge-conflicting-commands: true
+
+# Fabric: move an Essentials command or alias onto a different name entirely, so it never contests the original.
+# Use this when a merge is not what you want and you cannot change the other mod. The key is the Essentials
+# command or alias; the value is the new name. Permissions, command costs, cooldowns, 'disabled-commands' and
+# 'mute-commands' all keep matching on the ORIGINAL Essentials name, not the new one.
+command-name-overrides:
+  #eco: ess-eco
+  #enchant: essenchant
+
 # Disabling commands here will prevent Essentials from handling the command; this will not affect command conflicts.
 # You should not need to disable commands used by other plugins, as they will automatically get priority.
 # See https://breezewiki.com/bukkit/wiki/Commands.yml#aliases to map commands to other plugins.

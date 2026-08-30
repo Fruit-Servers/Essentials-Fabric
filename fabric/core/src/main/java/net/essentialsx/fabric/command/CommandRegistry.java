@@ -3,6 +3,7 @@ package net.essentialsx.fabric.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
@@ -39,6 +40,9 @@ import static net.essentialsx.fabric.text.I18n.tlLiteral;
  * source validation → permission → jail/mute policy → cooldown → cost → execution → audit.
  */
 public class CommandRegistry {
+    /** Name of the greedy argument node that carries everything after the command label. */
+    private static final String ARGS = "args";
+
     private final Essentials ess;
     private final Map<String, EssentialsCommand> commands = new LinkedHashMap<>();
     private final Map<String, CommandInfo> infos = new LinkedHashMap<>();
@@ -115,16 +119,26 @@ public class CommandRegistry {
             if (ess.getSettings().isCommandDisabled(info.name())) {
                 continue;
             }
-            registerLiteral(dispatcher, info.name(), command, info.name());
+            registerLiteral(dispatcher, renamed(info.name()), command, info.name());
             // namespaced form always available for collision resolution
             registerLiteral(dispatcher, "essentials:" + info.name(), command, info.name());
             for (final String alias : info.aliases()) {
                 if (ess.getSettings().isCommandDisabled(alias)) {
                     continue;
                 }
-                registerLiteral(dispatcher, alias, command, alias);
+                registerLiteral(dispatcher, renamed(alias), command, alias);
             }
         }
+    }
+
+    /**
+     * Applies the {@code command-name-overrides} config map, which moves an Essentials command or alias
+     * onto a different literal instead of contesting the original name with another mod. The original
+     * label is still what {@code disabled-commands}, {@code mute-commands} and the cooldowns match on.
+     */
+    private String renamed(final String label) {
+        final String override = ess.getSettings().getCommandNameOverride(label);
+        return override == null ? label : override;
     }
 
     /**
@@ -156,35 +170,65 @@ public class CommandRegistry {
                     ess.getLogger().info("Leaving vanilla /{} untouched (keep-vanilla-commands); Essentials' version is /essentials:{} or /e{}.", lower, command.getName(), command.getName());
                     return;
                 }
-                removeRootLiteral(dispatcher, lower);
+                CommandMerger.removeRootLiteral(dispatcher, lower);
                 if (dispatcher.getRoot().getChild("minecraft:" + lower) == null) {
                     dispatcher.getRoot().addChild(cloneLiteral(existing, "minecraft:" + lower));
                 }
                 if (ess.getSettings().isDebug()) {
                     ess.getLogger().info("Took over vanilla /{} (vanilla remains available as /minecraft:{}).", lower, lower);
                 }
+            } else if (ess.getSettings().isCommandOverridden(command.getName())) {
+                // Admin asked for Essentials to win the label outright; the other mod loses it.
+                CommandMerger.removeRootLiteral(dispatcher, lower);
+            } else if (ess.getSettings().isMergeConflictingCommands() && existing.getRedirect() == null) {
+                // Default: keep both. See mergeWithForeign.
+                mergeWithForeign(dispatcher, existing, lower, command, label);
+                return;
+            } else if (!lower.equals("e" + command.getName())) {
+                // Merging is off (or the node is a redirect, whose own children Brigadier never reads).
+                // The other mod keeps the label; Essentials stays reachable under its own names.
+                ess.getLogger().info("Command /{} is already registered by another mod; use /essentials:{} or /e{} (or add '{}' to overridden-commands).", lower, command.getName(), command.getName(), command.getName());
+                return;
             } else {
-                // Another mod registered this literal. Essentials overrides the label only when
-                // configured; otherwise it keeps the namespaced form and its "e"-prefixed alias.
-                if (!ess.getSettings().isCommandOverridden(command.getName()) && !lower.startsWith("e")) {
-                    ess.getLogger().info("Command /{} is already registered by another mod; use /essentials:{} or /e{} (or add '{}' to overridden-commands).", lower, command.getName(), command.getName(), command.getName());
-                    return;
-                }
-                removeRootLiteral(dispatcher, lower);
+                // The "e"-prefixed alias exists purely as Essentials' collision fallback, so it stays ours.
+                CommandMerger.removeRootLiteral(dispatcher, lower);
             }
         }
         registeredLiterals.add(lower);
-        final SuggestionProvider<CommandSourceStack> suggestions = (ctx, builder) -> suggest(ctx, builder, command, label);
         final LiteralArgumentBuilder<CommandSourceStack> node = Commands.literal(lower)
             .requires(source -> canUse(source, command))
-            .executes(ctx -> execute(ctx.getSource(), command, label, new String[0]))
-            .then(Commands.argument("args", StringArgumentType.greedyString())
-                .suggests(suggestions)
-                .executes(ctx -> execute(ctx.getSource(), command, label, tokenize(StringArgumentType.getString(ctx, "args")))));
+            .executes(ctx -> execute(ctx.getSource(), command, label, lower, new String[0]))
+            .then(argumentNode(ARGS, command, label, lower));
         final LiteralCommandNode<CommandSourceStack> registered = dispatcher.register(node);
         if (ess.getSettings().isDebug()) {
             ess.getLogger().info("Registered /{} -> {}", registered.getName(), command.getName());
         }
+    }
+
+    /**
+     * Keeps another mod's command and Essentials' version of it on the same literal instead of one
+     * deleting the other, so {@code /eco shop list} reaches the other mod while {@code /eco give Notch 100}
+     * reaches Essentials. {@link CommandMerger#merge} documents the routing and permission rules.
+     */
+    private void mergeWithForeign(final CommandDispatcher<CommandSourceStack> dispatcher, final CommandNode<CommandSourceStack> existing, final String lower, final EssentialsCommand command, final String label) {
+        final String argName = CommandMerger.freeArgumentName(existing, ARGS);
+        final LiteralCommandNode<CommandSourceStack> merged = CommandMerger.merge(existing, lower,
+            source -> canUse(source, command),
+            ctx -> execute(ctx.getSource(), command, label, lower, new String[0]),
+            argumentNode(argName, command, label, lower));
+        CommandMerger.removeRootLiteral(dispatcher, lower);
+        dispatcher.getRoot().addChild(merged);
+        registeredLiterals.add(lower);
+        ess.getLogger().info("Command /{} is also registered by another mod; merged both trees. Its subcommands still work and Essentials handles everything else; Essentials-only form is /essentials:{}.", lower, command.getName());
+    }
+
+    /** The greedy "everything after the label" argument that feeds the Essentials command pipeline. */
+    private RequiredArgumentBuilder<CommandSourceStack, String> argumentNode(final String name, final EssentialsCommand command, final String label, final String display) {
+        final SuggestionProvider<CommandSourceStack> suggestions = (ctx, builder) -> suggest(ctx, builder, command, label);
+        return Commands.argument(name, StringArgumentType.greedyString())
+            .requires(source -> canUse(source, command))
+            .suggests(suggestions)
+            .executes(ctx -> execute(ctx.getSource(), command, label, display, tokenize(StringArgumentType.getString(ctx, name))));
     }
 
     /** Copy of a root literal under a new name that shares the original's children, requirement and executor. */
@@ -200,20 +244,6 @@ public class CommandRegistry {
             builder.then(child);
         }
         return builder.build();
-    }
-
-    /** Brigadier has no public removal API; drop the literal from the root's lookup maps. */
-    private static void removeRootLiteral(final CommandDispatcher<CommandSourceStack> dispatcher, final String lower) {
-        dispatcher.getRoot().getChildren().removeIf(n -> n.getName().equals(lower));
-        try {
-            final java.lang.reflect.Field field = CommandNode.class.getDeclaredField("children");
-            field.setAccessible(true);
-            ((Map<?, ?>) field.get(dispatcher.getRoot())).remove(lower);
-            final java.lang.reflect.Field lit = CommandNode.class.getDeclaredField("literals");
-            lit.setAccessible(true);
-            ((Map<?, ?>) lit.get(dispatcher.getRoot())).remove(lower);
-        } catch (final ReflectiveOperationException ignored) {
-        }
     }
 
     private static String[] tokenize(final String args) {
@@ -287,15 +317,28 @@ public class CommandRegistry {
      * Shared execution pipeline (upstream {@code onCommandEssentials}).
      */
     public int execute(final CommandSourceStack source, final EssentialsCommand cmd, final String commandLabel, final String[] args) {
+        return execute(source, cmd, commandLabel, commandLabel, args);
+    }
+
+    /**
+     * Shared execution pipeline (upstream {@code onCommandEssentials}).
+     *
+     * <p>{@code displayLabel} is the literal the sender actually typed, which differs from
+     * {@code commandLabel} when {@code command-name-overrides} moved the command onto another name.
+     * Config policy (disabled commands, mute/social spy lists, cooldowns) matches on {@code commandLabel}
+     * so it keeps using the documented Essentials names; everything the sender reads uses
+     * {@code displayLabel} so usage lines quote a command that actually exists.
+     */
+    public int execute(final CommandSourceStack source, final EssentialsCommand cmd, final String commandLabel, final String displayLabel, final String[] args) {
         try {
             User user = null;
             final ServerPlayer player = source.getPlayer();
             if (player != null) {
                 user = ess.getUser(player);
             } else if (source.getEntity() == null && !source.getTextName().equals("Server") && ess.getSettings().logCommandBlockCommands() && source.getPosition() != null && isCommandBlock(source)) {
-                ess.getLogger().info("CommandBlock at " + source.getPosition().x + "," + source.getPosition().y + "," + source.getPosition().z + " issued server command: /" + commandLabel + " " + EssentialsCommand.getFinalArg(args, 0));
+                ess.getLogger().info("CommandBlock at " + source.getPosition().x + "," + source.getPosition().y + "," + source.getPosition().z + " issued server command: /" + displayLabel + " " + EssentialsCommand.getFinalArg(args, 0));
             } else if (ess.getSettings().logConsoleCommands() && !isCommandBlock(source)) {
-                ess.getLogger().info(source.getTextName() + " issued server command: /" + commandLabel + " " + EssentialsCommand.getFinalArg(args, 0));
+                ess.getLogger().info(source.getTextName() + " issued server command: /" + displayLabel + " " + EssentialsCommand.getFinalArg(args, 0));
             }
             final CommandSource sender = new CommandSource(ess, source);
             if (user != null && !ess.getSettings().isCommandDisabled("mail") && !cmd.getName().equals("mail") && user.isAuthorized("essentials.mail")) {
@@ -306,7 +349,7 @@ public class CommandRegistry {
                 return 1;
             }
             if (ess.getSettings().isCommandDisabled(commandLabel)) {
-                sender.sendTl("commandDisabled", commandLabel);
+                sender.sendTl("commandDisabled", displayLabel);
                 return 0;
             }
             if (user != null && !user.isAuthorized(cmd)) {
@@ -337,7 +380,7 @@ public class CommandRegistry {
             } catch (final NotEnoughArgumentsException ex) {
                 final CommandInfo info = infos.get(cmd.getName());
                 if (ess.getSettings().isVerboseCommandUsages() && !cmd.getUsageStrings().isEmpty()) {
-                    sender.sendTl("commandHelpLine1", commandLabel);
+                    sender.sendTl("commandHelpLine1", displayLabel);
                     String description = info == null ? "" : info.description();
                     try {
                         description = net.essentialsx.fabric.text.I18n.hasKey(cmd.getName() + "CommandDescription") ? sender.tl(cmd.getName() + "CommandDescription") : getInfo(cmd.getName()).description();
@@ -346,11 +389,11 @@ public class CommandRegistry {
                     sender.sendTl("commandHelpLine2", description);
                     sender.sendTl("commandHelpLine3");
                     for (final Map.Entry<String, String> usage : cmd.getUsageStrings().entrySet()) {
-                        sender.sendTl("commandHelpLineUsage", Text.parsed(usage.getKey().replace("<command>", commandLabel)), Text.parsed(sender.tl(usage.getValue())));
+                        sender.sendTl("commandHelpLineUsage", Text.parsed(usage.getKey().replace("<command>", displayLabel)), Text.parsed(sender.tl(usage.getValue())));
                     }
                 } else {
                     sender.sendMessage(info == null ? "" : info.description());
-                    sender.sendMessage(info == null ? "" : info.usage().replace("<command>", commandLabel));
+                    sender.sendMessage(info == null ? "" : info.usage().replace("<command>", displayLabel));
                 }
                 if (ex.getMessage() != null && !ex.getMessage().isEmpty()) {
                     sender.sendComponent(Text.get().deserializeMiniMessage(ex.getMessage()));
@@ -360,14 +403,14 @@ public class CommandRegistry {
                 }
                 return 0;
             } catch (final Exception ex) {
-                ess.showError(sender, ex, commandLabel);
+                ess.showError(sender, ex, displayLabel);
                 if (ess.getSettings().isDebug()) {
                     ess.getLogger().error("Command error", ex);
                 }
                 return 0;
             }
         } catch (final Throwable ex) {
-            ess.getLogger().error(Text.get().miniToLegacy(tlLiteral("commandFailed", commandLabel)), ex);
+            ess.getLogger().error(Text.get().miniToLegacy(tlLiteral("commandFailed", displayLabel)), ex);
             return 0;
         }
     }

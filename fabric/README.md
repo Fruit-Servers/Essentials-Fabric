@@ -68,8 +68,14 @@ parity/commands.yml          command/alias parity manifest generated from upstre
 * Vanilla command names that Essentials shares (`/msg`, `/w`, `/tell`, `/tp`, `/give`, `/kill`, `/kick`, `/ban`, `/gamemode`,
   `/time`, `/weather`, `/list`, `/me`, `/help`, `/clear`, `/xp`, ...) are taken over by Essentials exactly like on Bukkit; the
   vanilla command remains reachable as `/minecraft:<name>` (e.g. `/minecraft:tp @a ~ ~ ~` for selectors). Disable globally
-  with `override-vanilla-commands: false` or per command with `keep-vanilla-commands`. Collisions with other mods still
-  follow upstream's `overridden-commands` rule.
+  with `override-vanilla-commands: false` or per command with `keep-vanilla-commands`.
+* Command names another **mod** already owns are shared rather than taken: the foreign node's literal subcommands are
+  kept and Essentials' greedy argument is registered beside them, so `/eco shop list` reaches the other mod while
+  `/eco give Notch 100` reaches Essentials (Brigadier matches a literal child first and only then argument children).
+  The bare `/<name>` stays with whoever registered it first. Turn this off with `merge-conflicting-commands: false` to
+  leave the whole name to the other mod, list the command in `overridden-commands` to take it outright, or move
+  Essentials' version to a name of your own with `command-name-overrides`. Essentials' commands are always reachable
+  as `/essentials:<name>` and `/e<name>` regardless.
 * World names: `overworld`, `the_nether`, `the_end`, or `namespace:path` for other dimensions (configurable aliases).
   Permission nodes such as `essentials.worlds.<name>` use these names.
 * `/ptime` and `/pweather` are implemented with per-player time/weather packets (`listener/PlayerTimeWeather`), the same

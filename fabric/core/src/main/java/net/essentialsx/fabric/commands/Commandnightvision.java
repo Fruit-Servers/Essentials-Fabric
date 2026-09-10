@@ -4,6 +4,7 @@ import net.essentialsx.fabric.command.CommandSource;
 import net.essentialsx.fabric.command.EssentialsToggleCommand;
 import net.essentialsx.fabric.user.User;
 import net.essentialsx.fabric.utils.CommonPlaceholders;
+import net.essentialsx.fabric.utils.TriState;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -27,6 +28,16 @@ public class Commandnightvision extends EssentialsToggleCommand {
     @Override
     protected void run(final MinecraftServer server, final User user, final String commandLabel, final String[] args) throws Exception {
         handleToggleWithArgs(server, user, args);
+    }
+
+    /**
+     * Toggling others requires essentials.nightvision.others to be granted by the permission
+     * provider (directly or via a provider-side wildcard). Operator status and Essentials' own
+     * fallbacks do not imply it, unlike the other toggle commands.
+     */
+    @Override
+    protected boolean canToggleOthers(final User user) {
+        return user.getBase() != null && ess.getPermissionsHandler().isPermissionSetExact(user.getBase(), "essentials.nightvision.others") == TriState.TRUE;
     }
 
     private static boolean hasPermanentNightVision(final ServerPlayer player) {

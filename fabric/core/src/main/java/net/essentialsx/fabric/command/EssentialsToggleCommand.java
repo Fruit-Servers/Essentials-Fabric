@@ -16,15 +16,23 @@ public abstract class EssentialsToggleCommand extends EssentialsCommand {
         this.othersPermission = othersPermission;
     }
 
+    /**
+     * Whether this player may toggle the feature for other players. Defaults to the usual
+     * permission resolution (provider, wildcards, then op / player-command fallbacks).
+     */
+    protected boolean canToggleOthers(final User user) {
+        return user.isAuthorized(othersPermission);
+    }
+
     protected void handleToggleWithArgs(final MinecraftServer server, final User user, final String[] args) throws Exception {
         if (args.length == 1) {
             final Boolean toggle = matchToggleArgument(args[0]);
-            if (toggle == null && user.isAuthorized(othersPermission)) {
+            if (toggle == null && canToggleOthers(user)) {
                 toggleOtherPlayers(server, user.getSource(), args);
             } else {
                 togglePlayer(user.getSource(), user, toggle);
             }
-        } else if (args.length == 2 && user.isAuthorized(othersPermission)) {
+        } else if (args.length == 2 && canToggleOthers(user)) {
             toggleOtherPlayers(server, user.getSource(), args);
         } else {
             togglePlayer(user.getSource(), user, null);
@@ -70,12 +78,12 @@ public abstract class EssentialsToggleCommand extends EssentialsCommand {
     @Override
     protected List<String> getTabCompleteOptions(final MinecraftServer server, final User user, final String commandLabel, final String[] args) {
         if (args.length == 1) {
-            if (user.isAuthorized(othersPermission)) {
+            if (canToggleOthers(user)) {
                 return getPlayers(user);
             } else {
                 return new ArrayList<>(List.of("enable", "disable"));
             }
-        } else if (args.length == 2 && user.isAuthorized(othersPermission)) {
+        } else if (args.length == 2 && canToggleOthers(user)) {
             return new ArrayList<>(List.of("enable", "disable"));
         } else {
             return Collections.emptyList();

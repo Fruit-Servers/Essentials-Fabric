@@ -2,6 +2,7 @@ package net.essentialsx.fabric.mixin;
 
 import net.essentialsx.fabric.Essentials;
 import net.essentialsx.fabric.EssentialsFabric;
+import net.essentialsx.fabric.listener.EntityListener;
 import net.essentialsx.fabric.listener.JailListener;
 import net.essentialsx.fabric.listener.PlayerListener;
 import net.essentialsx.fabric.user.LazyLocation;
@@ -10,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.OutgoingChatMessage;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.RelativeMovement;
 import net.minecraft.world.level.GameType;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,12 +24,21 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.Set;
 
 /**
- * Chat ignore recipients (13.x), tab-list names (6.4), jail teleport override + game-mode lock (7.x).
+ * Death hook (13.4), chat ignore recipients (13.x), tab-list names (6.4), jail teleport override + game-mode lock (7.x).
  */
 @Mixin(ServerPlayer.class)
 public abstract class ServerPlayerMixin {
     @Unique
     private boolean essentials$teleportOverrideActive;
+
+    /** Death bookkeeping (keep-inv/keep-xp flags, back-on-death) before vanilla drops loot and XP below. */
+    @Inject(method = "die", at = @At("HEAD"))
+    private void essentials$onDeath(final DamageSource source, final CallbackInfo ci) {
+        final EntityListener listener = EssentialsFabric.entities();
+        if (listener != null) {
+            listener.onDeath((ServerPlayer) (Object) this);
+        }
+    }
 
     @Inject(method = "sendChatMessage", at = @At("HEAD"), cancellable = true)
     private void essentials$filterChat(final OutgoingChatMessage message, final boolean filtered, final ChatType.Bound bound, final CallbackInfo ci) {

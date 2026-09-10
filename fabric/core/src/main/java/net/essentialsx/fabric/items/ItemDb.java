@@ -9,6 +9,7 @@ import net.essentialsx.fabric.text.TranslatableException;
 import net.essentialsx.fabric.user.User;
 import net.essentialsx.fabric.user.UserData;
 import net.essentialsx.fabric.utils.FormatUtil;
+import net.essentialsx.fabric.utils.NumberUtil;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -58,6 +59,7 @@ public class ItemDb {
     private final Set<String> allAliases = new HashSet<>();
     private final Map<String, String> customAliases = new HashMap<>();
     private final Set<String> unknownNames = new HashSet<>();
+    private final Set<String> registryNames = new HashSet<>();
     private boolean ready = false;
 
     public ItemDb(final Essentials ess) {
@@ -75,6 +77,7 @@ public class ItemDb {
         allAliases.clear();
         customAliases.clear();
         unknownNames.clear();
+        registryNames.clear();
         try (InputStream in = ItemDb.class.getResourceAsStream("/items.json")) {
             if (in != null) {
                 final String json;
@@ -87,8 +90,9 @@ public class ItemDb {
             ess.getLogger().error("Failed to read items.json", e);
         }
         loadCustomItems();
+        loadRegistryNames();
         ready = true;
-        ess.getLogger().info("Loaded {} items from items.json.", listNames().size());
+        ess.getLogger().info("Loaded {} items from items.json and {} additional registry ids.", allAliases.size(), registryNames.size());
         if (!unknownNames.isEmpty()) {
             ess.getLogger().debug("{} item aliases reference items unknown to this server (e.g. newer content) and were skipped.", unknownNames.size());
         }
@@ -106,6 +110,19 @@ public class ItemDb {
             if (entry.getValue() != null) {
                 customAliases.put(entry.getKey().toLowerCase(Locale.ENGLISH), entry.getValue().toString());
                 allAliases.add(entry.getKey().toLowerCase(Locale.ENGLISH));
+            }
+        }
+    }
+
+    /** Namespaced ids of registered items that items.json does not know (modded and newer vanilla content). */
+    private void loadRegistryNames() {
+        final Set<Item> known = new HashSet<>();
+        for (final ItemData data : items.values()) {
+            known.add(data.item);
+        }
+        for (final Map.Entry<ResourceKey<Item>, Item> entry : BuiltInRegistries.ITEM.entrySet()) {
+            if (entry.getValue() != Items.AIR && !known.contains(entry.getValue())) {
+                registryNames.add(entry.getKey().location().toString());
             }
         }
     }
@@ -167,13 +184,16 @@ public class ItemDb {
                 return base;
             }
         }
-        final String[] split = id.split("(?<!^minecraft):");
-        ItemData data = getByName(split[0]);
+        // Resolution order: the whole string as an Essentials name/alias or a namespaced registry id
+        // (so modded ids such as "cobblemon:poke_ball" work), then the legacy "<item>:<durability>" form
+        // where the suffix after the last colon is numeric and <item> may itself be namespaced.
+        ItemData data = resolve(id);
+        String durability = null;
         if (data == null) {
-            // Direct namespaced registry lookup (modded items)
-            final ResourceLocation loc = ResourceLocation.tryParse(split[0]);
-            if (loc != null && BuiltInRegistries.ITEM.containsKey(loc)) {
-                data = new ItemData(BuiltInRegistries.ITEM.get(loc));
+            final int colon = id.lastIndexOf(':');
+            if (colon > 0 && colon < id.length() - 1 && NumberUtil.isInt(id.substring(colon + 1))) {
+                durability = id.substring(colon + 1);
+                data = resolve(id.substring(0, colon));
             }
         }
         if (data == null) {
@@ -191,11 +211,8 @@ public class ItemDb {
                 stack.set(DataComponents.POTION_CONTENTS, new PotionContents(potion));
             }
         }
-        if (split.length > 1 && stack.isDamageableItem()) {
-            try {
-                stack.setDamageValue(Integer.parseInt(split[1]));
-            } catch (final NumberFormatException ignored) {
-            }
+        if (durability != null && stack.isDamageableItem()) {
+            stack.setDamageValue(Integer.parseInt(durability));
         }
         if (data.entity != null && item == Items.SPAWNER) {
             final CompoundTag tag = new CompoundTag();
@@ -208,6 +225,22 @@ public class ItemDb {
             stack.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(tag));
         }
         return stack;
+    }
+
+    /**
+     * Resolve a single item id: Essentials names and aliases first (items.json + custom_items.yml
+     * targets), then any id present in the item registry, vanilla or modded.
+     */
+    private ItemData resolve(final String name) {
+        final ItemData data = getByName(name);
+        if (data != null) {
+            return data;
+        }
+        final ResourceLocation loc = ResourceLocation.tryParse(name);
+        if (loc != null && BuiltInRegistries.ITEM.containsKey(loc)) {
+            return new ItemData(BuiltInRegistries.ITEM.get(loc));
+        }
+        return null;
     }
 
     private ItemData getByName(String name) {
@@ -270,8 +303,15 @@ public class ItemDb {
         return new ItemData(type);
     }
 
+    /**
+     * Every name {@link #get(String)} accepts: Essentials names and aliases plus the namespaced id of
+     * each registered item that has no Essentials name (modded items, or vanilla items newer than
+     * the alias table). Used for tab completion.
+     */
     public Collection<String> listNames() {
-        return new HashSet<>(allAliases);
+        final Set<String> names = new HashSet<>(allAliases);
+        names.addAll(registryNames);
+        return names;
     }
 
     public List<ItemStack> getMatching(final User user, final String[] args) throws Exception {

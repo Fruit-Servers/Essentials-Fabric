@@ -43,12 +43,6 @@ public class EntityListener {
 
     public void register() {
         ServerLivingEntityEvents.ALLOW_DAMAGE.register(this::allowDamage);
-        ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> {
-            if (entity instanceof ServerPlayer player) {
-                onDeath(player);
-            }
-            return true;
-        });
         AttackEntityCallback.EVENT.register((player, world, hand, entity, hitResult) -> {
             if (!(player instanceof ServerPlayer serverPlayer)) {
                 return InteractionResult.PASS;
@@ -141,7 +135,12 @@ public class EntityListener {
 
     // ------------------------------------------------------------ death (Section 13.4)
 
-    private void onDeath(final ServerPlayer player) {
+    /**
+     * Called from {@code ServerPlayer#die} (HEAD) by {@code ServerPlayerMixin}, i.e. before vanilla drops
+     * loot/XP in the same method. Hooked directly rather than through Fabric's ALLOW_DEATH redirect so that
+     * another mod's mixin on {@code LivingEntity#hurt} cannot silently displace the keep-inv/keep-xp flags.
+     */
+    public void onDeath(final ServerPlayer player) {
         final User user = ess.getUser(player);
         if (ess.getSettings().infoAfterDeath()) {
             final LazyLocation loc = user.getLocation();
@@ -153,6 +152,9 @@ public class EntityListener {
         }
         user.setKeepXpOnDeath(user.isAuthorized("essentials.keepxp"));
         user.setKeepInvOnDeath(user.isAuthorized("essentials.keepinv"));
+        if (ess.getSettings().isDebug()) {
+            ess.getLogger().info("Death of {}: keepxp={} keepinv={} keepInventory-rule={}", user.getName(), user.isKeepXpOnDeath(), user.isKeepInvOnDeath(), player.serverLevel().getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_KEEPINVENTORY));
+        }
         if (user.isKeepInvOnDeath()) {
             final Settings.KeepInvPolicy vanish = ess.getSettings().getVanishingItemsPolicy();
             final Settings.KeepInvPolicy bind = ess.getSettings().getBindingItemsPolicy();
@@ -211,6 +213,9 @@ public class EntityListener {
                 newPlayer.experienceLevel = oldPlayer.experienceLevel;
                 newPlayer.totalExperience = oldPlayer.totalExperience;
                 newPlayer.experienceProgress = oldPlayer.experienceProgress;
+            }
+            if (ess.getSettings().isDebug()) {
+                ess.getLogger().info("Respawn of {}: restored keepxp={} (level {}) keepinv={}", user.getName(), user.isKeepXpOnDeath(), newPlayer.experienceLevel, user.isKeepInvOnDeath());
             }
             user.setKeepInvOnDeath(false);
             user.setKeepXpOnDeath(false);

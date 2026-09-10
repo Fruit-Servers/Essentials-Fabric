@@ -36,6 +36,7 @@ subprojects {
     tasks.withType<ProcessResources>().configureEach {
         val props = mapOf(
             "version" to project.version.toString(),
+            "mod_version" to project.property("mod_version"),
             "minecraft_version" to project.property("minecraft_version"),
             "loader_version" to project.property("loader_version"),
         )

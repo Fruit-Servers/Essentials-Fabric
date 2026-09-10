@@ -87,9 +87,8 @@ public class Commandclearinventory extends EssentialsCommand {
             } else if (!args[offset].equalsIgnoreCase("*")) {
                 final String[] split = args[offset].split(",");
                 for (final String item : split) {
-                    final String[] itemParts = item.split(":");
                     try {
-                        items.add(ess.getItemDb().get(itemParts[0]).getItem());
+                        items.add(ess.getItemDb().get(item).getItem());
                     } catch (final Exception ignored) {
                     }
                 }

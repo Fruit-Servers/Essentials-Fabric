@@ -16,6 +16,6 @@
     "minecraft": "~1.21.1",
     "java": ">=21",
     "fabric-api": "*",
-    "essentials_fabric": "${version}"
+    "essentials_fabric": "^${mod_version}"
   }
 }

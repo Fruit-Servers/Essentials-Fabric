@@ -1,5 +1,6 @@
 # This file stores custom item aliases.
 # Note: You cannot alias an item to another entry in this file.
+# Targets can be Essentials names, vanilla ids or modded namespaced ids (e.g. pokeball: cobblemon:poke_ball).
 
 aliases:
   bluepaint: blue_dye

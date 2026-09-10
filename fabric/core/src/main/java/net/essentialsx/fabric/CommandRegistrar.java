@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * Registers every core command with its upstream aliases (generated from the locked
- * EssentialsX {@code plugin.yml}; see parity/commands.yml). 153 commands.
+ * EssentialsX {@code plugin.yml}; see parity/commands.yml). 153 upstream commands plus /nightvision.
  */
 public final class CommandRegistrar {
     private CommandRegistrar() {
@@ -101,6 +101,7 @@ public final class CommandRegistrar {
         reg(r, new Commandmute(), "emute", "silence", "esilence", "unmute", "eunmute");
         reg(r, new Commandnear(), "enear", "nearby", "enearby");
         reg(r, new Commandnick(), "enick", "nickname", "enickname");
+        reg(r, new Commandnightvision(), "nv", "enightvision", "env"); // Fabric-only addition
         reg(r, new Commandnuke(), "enuke");
         reg(r, new Commandpay(), "epay");
         reg(r, new Commandpayconfirmtoggle(), "epayconfirmtoggle", "payconfirmoff", "epayconfirmoff", "payconfirmon", "epayconfirmon", "payconfirm", "epayconfirm");

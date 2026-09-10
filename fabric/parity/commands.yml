@@ -244,6 +244,10 @@ commands:
   nick:
     aliases: [enick, nickname, enickname]
     class: net.essentialsx.fabric.commands.Commandnick
+  nightvision:
+    aliases: [nv, enightvision, env]
+    class: net.essentialsx.fabric.commands.Commandnightvision
+    note: Fabric-only addition (no upstream equivalent); permission essentials.nightvision
   nuke:
     aliases: [enuke]
     class: net.essentialsx.fabric.commands.Commandnuke

@@ -22,8 +22,8 @@ import net.minecraft.world.inventory.StonecutterMenu;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Portable vanilla screen handlers (Section 11.3). Menus use an unrestricted
- * {@link ContainerLevelAccess} so they stay valid without a nearby block.
+ * Portable vanilla screen handlers (Section 11.3). Menus are anchored at the player's position
+ * but skip vanilla's "matching block nearby" validity check so they stay open without a block.
  */
 public final class Workstations {
     private Workstations() {
@@ -52,44 +52,74 @@ public final class Workstations {
         AbstractContainerMenu create(int id, Inventory inventory);
     }
 
-    /** Menu wrapper that never closes because the player is "too far" from a block. */
-    private static final class AlwaysValid {
-        static ContainerLevelAccess of(final ServerPlayer player) {
-            return new ContainerLevelAccess() {
-                @Override
-                public <T> java.util.Optional<T> evaluate(final java.util.function.BiFunction<net.minecraft.world.level.Level, net.minecraft.core.BlockPos, T> function) {
-                    return java.util.Optional.ofNullable(function.apply(player.level(), player.blockPosition()));
-                }
-            };
-        }
-    }
+    /*
+     * Each portable menu keeps a real ContainerLevelAccess at the player's position so vanilla can
+     * still run its block-side effects (crafting result updates, anvil/stonecutter/loom sounds,
+     * grindstone XP), but overrides stillValid: vanilla's check requires the matching block to be
+     * at that position and there is none, which would close the screen on the next tick.
+     */
 
     public static void openAnvil(final ServerPlayer player) {
-        open(player, Component.translatable("container.repair"), (id, inv) -> new AnvilMenu(id, inv, AlwaysValid.of(player)));
+        open(player, Component.translatable("container.repair"), (id, inv) -> new AnvilMenu(id, inv, access(player)) {
+            @Override
+            public boolean stillValid(final Player p) {
+                return true;
+            }
+        });
     }
 
     public static void openCartography(final ServerPlayer player) {
-        open(player, Component.translatable("container.cartography_table"), (id, inv) -> new CartographyTableMenu(id, inv, AlwaysValid.of(player)));
+        open(player, Component.translatable("container.cartography_table"), (id, inv) -> new CartographyTableMenu(id, inv, access(player)) {
+            @Override
+            public boolean stillValid(final Player p) {
+                return true;
+            }
+        });
     }
 
     public static void openGrindstone(final ServerPlayer player) {
-        open(player, Component.translatable("container.grindstone_title"), (id, inv) -> new GrindstoneMenu(id, inv, AlwaysValid.of(player)));
+        open(player, Component.translatable("container.grindstone_title"), (id, inv) -> new GrindstoneMenu(id, inv, access(player)) {
+            @Override
+            public boolean stillValid(final Player p) {
+                return true;
+            }
+        });
     }
 
     public static void openLoom(final ServerPlayer player) {
-        open(player, Component.translatable("container.loom"), (id, inv) -> new LoomMenu(id, inv, AlwaysValid.of(player)));
+        open(player, Component.translatable("container.loom"), (id, inv) -> new LoomMenu(id, inv, access(player)) {
+            @Override
+            public boolean stillValid(final Player p) {
+                return true;
+            }
+        });
     }
 
     public static void openSmithing(final ServerPlayer player) {
-        open(player, Component.translatable("container.upgrade"), (id, inv) -> new SmithingMenu(id, inv, AlwaysValid.of(player)));
+        open(player, Component.translatable("container.upgrade"), (id, inv) -> new SmithingMenu(id, inv, access(player)) {
+            @Override
+            public boolean stillValid(final Player p) {
+                return true;
+            }
+        });
     }
 
     public static void openStonecutter(final ServerPlayer player) {
-        open(player, Component.translatable("container.stonecutter"), (id, inv) -> new StonecutterMenu(id, inv, AlwaysValid.of(player)));
+        open(player, Component.translatable("container.stonecutter"), (id, inv) -> new StonecutterMenu(id, inv, access(player)) {
+            @Override
+            public boolean stillValid(final Player p) {
+                return true;
+            }
+        });
     }
 
     public static void openWorkbench(final ServerPlayer player) {
-        open(player, Component.translatable("container.crafting"), (id, inv) -> new CraftingMenu(id, inv, AlwaysValid.of(player)));
+        open(player, Component.translatable("container.crafting"), (id, inv) -> new CraftingMenu(id, inv, access(player)) {
+            @Override
+            public boolean stillValid(final Player p) {
+                return true;
+            }
+        });
     }
 
     /**

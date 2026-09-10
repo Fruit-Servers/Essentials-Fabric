@@ -9,7 +9,7 @@ reference implementation.
 
 | Mod id | Artifact | Upstream module |
 |---|---|---|
-| `essentials_fabric` | `fabric/core/build/libs/EssentialsFabric-<version>.jar` | `Essentials/` (all 153 commands, signs, kits, warps, jails, homes, teleports, AFK, vanish, mail, economy policy, ...) |
+| `essentials_fabric` | `fabric/core/build/libs/EssentialsFabric-<version>.jar` | `Essentials/` (all 153 upstream commands plus /nightvision, signs, kits, warps, jails, homes, teleports, AFK, vanish, mail, economy policy, ...) |
 | `essentials_fabric_spawn` | `fabric/spawn/build/libs/EssentialsFabricSpawn-<version>.jar` | `EssentialsSpawn/` (`/spawn`, `/setspawn`, respawn/join spawn policy, newbie kit) |
 
 ## Provenance / licence
@@ -47,7 +47,7 @@ are `modLocalRuntime` only and are never bundled. Mixins are remapped by Loom at
 core/src/main/java/net/essentialsx/fabric/
   Essentials.java            container: settings, users, economy, kits, warps, jails, timers, main-thread queue
   EssentialsFabric.java      mod entrypoint; Fabric event wiring; static listener accessors used by mixins
-  CommandRegistrar.java      registers all 153 core commands + upstream aliases (see parity/commands.yml)
+  CommandRegistrar.java      registers all 153 upstream core commands (+ /nightvision) with their aliases (see parity/commands.yml)
   command/                   Brigadier bridge (CommandRegistry), EssentialsCommand base classes, exceptions
   commands/                  one class per upstream command (Command<name>), commands/essentials/ = /essentials nodes
   config/                    Settings (upstream config.yml keys), YamlFile, AsyncWriter

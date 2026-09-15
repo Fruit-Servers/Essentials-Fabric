@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,6 +32,45 @@ public class PermissionsHandler {
     private final Map<UUID, Map<String, Boolean>> cache = new ConcurrentHashMap<>();
     private final Map<UUID, Long> cacheTime = new ConcurrentHashMap<>();
     private static final long CACHE_TTL = TimeUnit.SECONDS.toMillis(5);
+    /**
+     * Nodes (without the {@code essentials.} prefix) that upstream plugin.yml declares
+     * {@code default: true}: granted to everyone unless a provider says otherwise.
+     */
+    private static final Set<String> DEFAULT_TRUE = Set.of(
+        "back.onteleport",
+        "teleport.cooldown.bypass.tpa",
+        "teleport.cooldown.bypass.back"
+    );
+    /**
+     * Nodes (without the {@code essentials.} prefix) that upstream plugin.yml declares
+     * {@code default: false}: never implied, not even for operators. Exemptions, bypasses and
+     * opt-in behaviour need an explicit provider grant or a {@code player-commands} entry.
+     */
+    private static final Set<String> DEFAULT_FALSE = Set.of(
+        "afk.auto",
+        "back.ondeath",
+        "balancetop.exclude",
+        "ban.exempt",
+        "chat.ignoreexempt",
+        "exempt",
+        "home.compass",
+        "invsee.preventmodify",
+        "keepinv",
+        "keepxp",
+        "kick.exempt",
+        "kit.exemptdelay",
+        "mute.exempt",
+        "near.exclude",
+        "nick.allowunsafe",
+        "nick.hideprefix",
+        "sethome.bed",
+        "silentjoin",
+        "silentjoin.vanish",
+        "silentquit",
+        "spawn-on-join.exempt",
+        "sudo.exempt",
+        "tempban.exempt"
+    );
 
     public PermissionsHandler(final Essentials ess) {
         this.ess = ess;
@@ -56,23 +96,20 @@ public class PermissionsHandler {
      * Default policy when no provider answers (Section 7.1).
      */
     private boolean defaultPolicy(final ServerPlayer player, final String node) {
-        if (isOp(player)) {
+        if (!node.startsWith("essentials.")) {
+            return isOp(player);
+        }
+        final String rest = node.substring("essentials.".length());
+        // Upstream ConfigPermissionsHandler grants only an exact player-commands entry:
+        // "kit" grants essentials.kit but never essentials.kit.exemptdelay, so kit
+        // cooldowns, "others" variants and other sub nodes stay opt-in.
+        if (ess.getSettings().isPlayerCommand(rest)) {
             return true;
         }
-        if (node.startsWith("essentials.")) {
-            final String rest = node.substring("essentials.".length());
-            // Default-true nodes mirroring upstream plugin.yml defaults
-            if (rest.equals("back.onteleport") || rest.equals("teleport.cooldown.bypass.tpa") || rest.equals("teleport.cooldown.bypass.back")) {
-                return true;
-            }
-            final int dot = rest.indexOf('.');
-            final String command = dot == -1 ? rest : rest.substring(0, dot);
-            if (ess.getSettings().isPlayerCommand(command)) {
-                // Grant the command node and its "others"-less sub nodes
-                return dot == -1 || !rest.endsWith(".others");
-            }
+        if (DEFAULT_FALSE.contains(rest)) {
+            return false;
         }
-        return false;
+        return isOp(player) || DEFAULT_TRUE.contains(rest);
     }
 
     public boolean hasPermission(final ServerPlayer player, final String node) {

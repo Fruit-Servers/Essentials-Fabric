@@ -26,8 +26,10 @@ original attribution kept (`LICENSE_essentials-fabric` inside the jar). It is no
   Startup fails with a clear message if Impactor is missing, too old, exposes no economy service, or has no usable
   currency (`economy.impactor-currency` in `config.yml` selects a non-primary currency).
 * Optional: `fabric-permissions-api` (bundled), LuckPerms 5.4 (groups, prefixes/suffixes, `/list` groups, kit/home
-  limits per group). Without a permissions mod, operators receive every permission and non-operators only the
-  `player-commands` list from `config.yml`.
+  limits per group). When the provider leaves a node unset, operators receive it and non-operators receive only exact
+  entries of the `player-commands` list in `config.yml` (`kit` grants `essentials.kit`, not `essentials.kit.exemptdelay`).
+  Nodes upstream declares `default: false` (exemptions, bypasses, `keepxp`/`keepinv`, `silentjoin`/`silentquit`,
+  `kit.exemptdelay`, ...) are never implied, not even for operators.
 
 ## Building & developing
 

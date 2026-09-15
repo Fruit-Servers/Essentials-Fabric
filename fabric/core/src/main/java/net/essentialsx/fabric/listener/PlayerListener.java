@@ -270,9 +270,6 @@ public class PlayerListener {
         ess.getDisplayNames().remove(player.getUUID());
         ess.getSleepManager().remove(player.getUUID());
         ess.getVisibility().remove(player.getUUID());
-        if (ess.getEconomy() != null) {
-            ess.getEconomy().unload(player.getUUID());
-        }
         user.setOffline();
         ess.getUsers().onQuit(player.getUUID());
         ess.getPlayerTimeWeather().remove(player.getUUID());

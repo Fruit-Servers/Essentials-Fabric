@@ -63,9 +63,6 @@ public class TickTimer {
         }
         if (tickCounter % 1200 == 0) {
             ess.getUsers().cleanupCache();
-            if (ess.getEconomy() != null) {
-                ess.getEconomy().cleanupCache();
-            }
             final long serverTick = ess.getServer().getTickCount();
             for (final User user : ess.getOnlineUsers()) {
                 user.flushPlaytime(serverTick);

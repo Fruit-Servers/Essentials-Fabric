@@ -16,29 +16,25 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Essentials policy over the Impactor 5.3.5 economy API (Section 10).
  *
  * <p>Impactor owns accounts, currencies and durability. This adapter binds one currency
- * for the server lifetime, resolves accounts asynchronously, preserves Impactor
- * transaction results, and keeps a short-lived balance cache so command flows that
- * historically read synchronously (cost checks, sell, signs) can run on the server thread
- * without blocking on storage.
+ * for the server lifetime, resolves accounts asynchronously and preserves Impactor
+ * transaction results. It deliberately holds no {@code Account} objects of its own: Impactor
+ * evicts accounts from its cache after a short idle period, and any copy kept here would go
+ * stale as soon as another mod (GTS, shops, crates, ...) touched the same account through a
+ * freshly resolved instance. Every call goes through {@code service.account(currency, uuid)}
+ * so Essentials always sees the same account state as everyone else.
  */
 public class ImpactorEconomy {
     private final Essentials ess;
     private final EconomyService service;
     private final Currency currency;
-    private final Map<UUID, Account> accounts = new ConcurrentHashMap<>();
-    private final Map<UUID, Long> accountTimes = new ConcurrentHashMap<>();
-    private static final long ACCOUNT_TTL = TimeUnit.MINUTES.toMillis(10);
 
     private ImpactorEconomy(final Essentials ess, final EconomyService service, final Currency currency) {
         this.ess = ess;
@@ -107,53 +103,32 @@ public class ImpactorEconomy {
     // ------------------------------------------------------------ accounts
 
     public CompletableFuture<Account> account(final UUID uuid) {
-        final Account cached = accounts.get(uuid);
-        if (cached != null) {
-            accountTimes.put(uuid, System.currentTimeMillis());
-            return CompletableFuture.completedFuture(cached);
-        }
-        return service.account(currency, uuid).thenApply(account -> {
-            accounts.put(uuid, account);
-            accountTimes.put(uuid, System.currentTimeMillis());
-            return account;
-        });
+        return service.account(currency, uuid);
     }
 
     /**
-     * Cached account, or null when it has not been loaded yet. Online players are preloaded
-     * on join so the server-thread command paths can use this safely.
+     * Account from Impactor's own cache when it can be resolved without waiting, or null
+     * when Impactor would have to hit storage. Server-thread paths use this and fall back
+     * to a bounded async wait when it returns null.
      */
     public Account cachedAccount(final UUID uuid) {
-        return accounts.get(uuid);
+        final CompletableFuture<Account> future = service.account(currency, uuid);
+        return future.isDone() && !future.isCompletedExceptionally() ? future.join() : null;
     }
 
     public CompletableFuture<Boolean> hasAccount(final UUID uuid) {
-        if (accounts.containsKey(uuid)) {
-            return CompletableFuture.completedFuture(true);
-        }
         return service.hasAccount(currency, uuid);
     }
 
+    /**
+     * Warm Impactor's account cache (for example on join) so the first server-thread
+     * lookups resolve without touching storage.
+     */
     public void preload(final UUID uuid) {
         account(uuid).exceptionally(t -> {
             ess.getLogger().warn("Failed to load Impactor account for {}: {}", uuid, t.getMessage());
             return null;
         });
-    }
-
-    public void unload(final UUID uuid) {
-        accounts.remove(uuid);
-        accountTimes.remove(uuid);
-    }
-
-    public void cleanupCache() {
-        final long now = System.currentTimeMillis();
-        for (final Map.Entry<UUID, Long> entry : accountTimes.entrySet()) {
-            if (now - entry.getValue() > ACCOUNT_TTL && (ess.getServer() == null || ess.getServer().getPlayerList().getPlayer(entry.getKey()) == null)) {
-                accounts.remove(entry.getKey());
-                accountTimes.remove(entry.getKey());
-            }
-        }
     }
 
     // ------------------------------------------------------------ balances
@@ -163,14 +138,12 @@ public class ImpactorEconomy {
     }
 
     /**
-     * Balance from the cached account; falls back to the user's imported/cached value.
+     * Balance when Impactor can resolve the account immediately, otherwise null so callers
+     * can fall back to the user's imported/cached value.
      */
     public BigDecimal balanceNow(final UUID uuid) {
-        final Account account = accounts.get(uuid);
-        if (account != null) {
-            return account.balance();
-        }
-        return null;
+        final Account account = cachedAccount(uuid);
+        return account != null ? account.balance() : null;
     }
 
     public CompletableFuture<EconomyTransaction> set(final UUID uuid, final BigDecimal amount) {
@@ -196,7 +169,7 @@ public class ImpactorEconomy {
         return account(from).thenCombine(account(to), (a, b) -> a.transfer(b, normalize(amount)));
     }
 
-    // synchronous variants operating on cached accounts (server thread, preloaded users)
+    // synchronous variants operating on an already-resolved account (server thread)
 
     public EconomyTransaction setNow(final Account account, final BigDecimal amount) {
         return account.set(normalize(amount));
